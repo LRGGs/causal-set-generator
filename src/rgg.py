@@ -48,7 +48,7 @@ class Graph:
         positions = [np.random.uniform(0, 1, d) for _ in range(self.n)]
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
-        self.height_and_depth = [Order(node, 0, 0) for node in range(self.n)]
+        self.order = [Order(node, 0, 0) for node in range(self.n)]
 
     @staticmethod
     def find_max_list(lst):
@@ -127,21 +127,15 @@ class Graph:
 
         return tot_distance
 
-    def find_longest_path(self):
-        """
-        Find a longest path in the network. Note that this will return
-        only one possible longest path. The nature of which is chosen
-        is decided by python's max function.
-        """
-        chains = [set() for _ in range(self.n)]
-        vis = [False] * self.n
-        for node in range(self.n):
-            if not vis[node]:
-                self.longest_path_per_node(node, chains, vis)
+    def find_order(self):
+        """"""
+        for direction in ["children", "parents"]:
+            vis = [False] * self.n
+            for node in range(self.n):
+                if not vis[node]:
+                    self.direction_first_search(node, vis, direction)
 
-        self.longest_path = list(self.find_max_list(chains))
-
-    def longest_path_per_node(self, node, chains, vis):
+    def direction_first_search(self, node, vis, direction):
         """
         iterate through all nested children, considering them
         only if they have not been previously visited. Choose longest
@@ -150,19 +144,20 @@ class Graph:
 
         Args:
             node: the parent node we are considering
-            chains: the longest known chains of all nodes
             vis: which nodes have already been visited
+            direction:
         """
+        direction_to_order_map= {"children": "height", "parents": "depth"}
         vis[node] = True
 
-        for child in self.neighbours[node].children:
-            if not vis[child]:
-                self.longest_path_per_node(child, chains, vis)
+        for relative in getattr(self.neighbours[node], direction):
+            if not vis[relative]:
+                self.direction_first_search(relative, vis, direction)
 
-            chains[node] = self.find_max_list(
-                [chains[node], {(node, child)}.union(chains[child])]
-            )
-            self.height_and_depth[node].height = len(chains[node])
+            current_order = getattr(self.order[node], direction_to_order_map[direction])
+            child_order = getattr(self.order[relative], direction_to_order_map[direction])
+
+            setattr(self.order[node], direction_to_order_map[direction], max([current_order, child_order + 1]))
 
     def angular_deviation(self, path=None):
         """
@@ -202,12 +197,13 @@ if __name__ == "__main__":
     n = 10
     graph = Graph(n, 0.3, 2)
     graph.make_edges_minkowski()
-    graph.find_longest_path()
-    print(graph.geometric_length())
-    print(graph.longest_path)
-    print(graph.angular_deviation())
+    graph.find_order()
+    print(graph.order)
+    # print(graph.geometric_length())
+    # print(graph.longest_path)
+    # print(graph.angular_deviation())
     g = nx.DiGraph()
     g.add_nodes_from(range(n))
     g.add_edges_from(graph.edges)
     nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    plt.show()
+    plt.savefig("graph")
