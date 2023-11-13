@@ -5,7 +5,7 @@ from itertools import combinations
 import matplotlib
 from dataclasses import dataclass
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 
 @dataclass
@@ -45,10 +45,18 @@ class Graph:
         self.edges = []
         self.longest_path = []
         self.neighbours = [Neighbours(_, [], []) for _ in range(self.n)]
-        positions = [np.random.uniform(0, 1, d) for _ in range(self.n)]
+        self.nodes = []
+        self.order = [Order(node, 0, 0) for node in range(self.n)]
+
+    def generate_nodes(self):
+        positions = [np.random.uniform(0, 1, self.d) for _ in range(self.n - 2)]
+        rot = 1/np.sqrt(2)
+        rotation_mat = [[rot, -rot], [rot, rot]]
+        position = [rotation_mat @ p for p in positions]
+        position.append([0, 0])
+        position.append([np.sqrt(2), 0])
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
-        self.order = [Order(node, 0, 0) for node in range(self.n)]
 
     @staticmethod
     def find_max_list(lst):
@@ -129,11 +137,12 @@ class Graph:
 
     def find_order(self):
         """"""
-        for direction in ["children", "parents"]:
+        possible_directions = ["children", "parents"]
+        direction_to_start_map = {"children": 0, "parents": self.n -1}
+        for direction in possible_directions:
             vis = [False] * self.n
-            for node in range(self.n):
-                if not vis[node]:
-                    self.direction_first_search(node, vis, direction)
+            node = direction_to_start_map[direction]
+            self.direction_first_search(node, vis, direction)
 
     def direction_first_search(self, node, vis, direction):
         """
@@ -196,6 +205,7 @@ class Graph:
 if __name__ == "__main__":
     n = 10
     graph = Graph(n, 0.3, 2)
+    graph.generate_nodes()
     graph.make_edges_minkowski()
     graph.find_order()
     print(graph.order)
