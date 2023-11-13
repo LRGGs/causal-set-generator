@@ -5,7 +5,7 @@ from itertools import combinations
 import matplotlib
 from dataclasses import dataclass
 
-# matplotlib.use("TkAgg")
+matplotlib.use("TkAgg")
 
 
 @dataclass
@@ -51,10 +51,11 @@ class Graph:
     def generate_nodes(self):
         positions = [np.random.uniform(0, 1, self.d) for _ in range(self.n - 2)]
         rot = 1/np.sqrt(2)
-        rotation_mat = [[rot, -rot], [rot, rot]]
-        position = [rotation_mat @ p for p in positions]
-        position.append([0, 0])
-        position.append([np.sqrt(2), 0])
+        rotation_mat = np.array([[rot, rot],
+                                 [-rot, rot]])
+        positions = [rotation_mat @ p for p in positions]
+        positions.append([0, 0])
+        positions.append([np.sqrt(2), 0])
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
 
@@ -112,7 +113,7 @@ class Graph:
             pos1 = node_pair[1].position
         else:
             raise AttributeError("wrong format of node passed to distance function")
-        dx = pos1 - pos0
+        dx = np.array(pos1) - np.array(pos0)
 
         return self.minkowski_metric @ dx @ dx
 
@@ -203,7 +204,7 @@ class Graph:
 
 
 if __name__ == "__main__":
-    n = 10
+    n = 100
     graph = Graph(n, 0.3, 2)
     graph.generate_nodes()
     graph.make_edges_minkowski()
