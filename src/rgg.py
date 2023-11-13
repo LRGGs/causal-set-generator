@@ -21,6 +21,13 @@ class Order:
     depth: int
 
 
+@dataclass
+class Neighbours:
+    node: int
+    children: list
+    parents: list
+
+
 class Graph:
     def __init__(self, n, radius, d):
         """
@@ -37,8 +44,7 @@ class Graph:
         self.radius = radius
         self.edges = []
         self.longest_path = []
-        self.children = [[] for _ in range(self.n)]
-        self.parents = [[] for _ in range(self.n)]
+        self.neighbours = [Neighbours(_, [], []) for _ in range(self.n)]
         positions = [np.random.uniform(0, 1, d) for _ in range(self.n)]
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
@@ -81,8 +87,8 @@ class Graph:
                     else (node2.node, node1.node)
                 )
                 self.edges.append(edge)
-                self.children[edge[0]].append(edge[1])
-                self.parents[edge[1]].append(edge[0])
+                self.neighbours[edge[0]].children.append(edge[1])
+                self.neighbours[edge[1]].parents.append(edge[0])
 
     def interval(self, node_pair):
         """
@@ -149,7 +155,7 @@ class Graph:
         """
         vis[node] = True
 
-        for child in self.children[node]:
+        for child in self.neighbours[node].children:
             if not vis[child]:
                 self.longest_path_per_node(child, chains, vis)
 
@@ -166,9 +172,30 @@ class Graph:
         """
         if path is None:
             path = self.longest_path
-        ordered_path = sorted(path, key=lambda edge: edge[0])
-        angle_index_combos = [(i, j) for i, j in combinations([_ for _ in range(self.d)], 2)]
+        ordered_path = sorted(path, key=lambda e: e[0])
+        angle_index_combos = [
+            (i, j) for i, j in combinations([_ for _ in range(self.d)], 2)
+        ]
+
         angles = []
+        for node_pair in ordered_path:
+            position_changes = [
+                self.node_position(node_pair[1])[d]
+                - self.node_position(node_pair[0])[d]
+                for d in range(self.d)
+            ]
+            angles.append(
+                [
+                    np.arctan(position_changes[i] / position_changes[j])
+                    for i, j in angle_index_combos
+                ]
+            )
+
+        print(angles)
+        deviation = []
+        for i, j in zip(angles[0::], angles[1::]):
+            deviation.append([j[d] - i[d] for d in range(len(i))])
+        return deviation
 
 
 if __name__ == "__main__":
@@ -177,9 +204,10 @@ if __name__ == "__main__":
     graph.make_edges_minkowski()
     graph.find_longest_path()
     print(graph.geometric_length())
+    print(graph.longest_path)
+    print(graph.angular_deviation())
     g = nx.DiGraph()
     g.add_nodes_from(range(n))
     g.add_edges_from(graph.edges)
-    # print([graph.height_and_depth[i].height for i in range(n)])
     nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
     plt.show()
