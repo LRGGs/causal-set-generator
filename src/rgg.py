@@ -147,7 +147,7 @@ class Graph:
             vis: which nodes have already been visited
             direction:
         """
-        direction_to_order_map= {"children": "height", "parents": "depth"}
+        direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
         for relative in getattr(self.neighbours[node], direction):
@@ -206,4 +206,4 @@ if __name__ == "__main__":
     g.add_nodes_from(range(n))
     g.add_edges_from(graph.edges)
     nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    plt.savefig("graph")
+    plt.show()
