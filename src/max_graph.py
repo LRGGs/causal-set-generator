@@ -38,8 +38,9 @@ class Network:
         unsort_poses = np.einsum('ij, kj -> ki', rotation, square_positions)
 
         self.positions = unsort_poses[unsort_poses[:, 0].argsort()]  # sort topologically (by time)
-
+        import time
         # Connect Nodes
+        a = time.time()
         R_squared = self.R
         edge_store = []
         child_store =  [[] for i in range(self.N)]
@@ -54,7 +55,8 @@ class Network:
         self.edges = np.array(edge_store)
         self.children = child_store
         self.parents = parent_store
-
+        b = time.time()-a
+        print(b)
 
     def prop_tau(self, node1, node2):
         dx = self.positions[node2] - self.positions[node1]
@@ -67,6 +69,12 @@ class Network:
 
 
 if __name__ == '__main__':
-    net1 = Network(1e3, 0.001)
-    net1.plot_nodes()
-    print("debug stop")
+    import cProfile, pstats, io
+    pr = cProfile.Profile()
+    pr.enable()
+
+    net1 = Network(3e3, 0.3)
+    #net1.plot_nodes()
+
+    filename = 'profile.prof'  # You can change this if needed
+    pr.dump_stats(filename)

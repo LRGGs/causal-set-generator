@@ -47,27 +47,19 @@ class Graph:
         self.neighbours = [Neighbours(_, [], []) for _ in range(self.n)]
         self.nodes = []
         self.order = [Order(node, 0, 0) for node in range(self.n)]
+        identity = np.identity(n=self.d)
+        identity[0][0] *= -1
+        self.minkowski_metric = identity
 
     def generate_nodes(self):
-        positions = [np.random.uniform(0, 1, self.d) for _ in range(self.n - 2)]
-        rot = 1/np.sqrt(2)
-        rotation_mat = np.array([[rot, rot],
-                                 [-rot, rot]])
-        positions = [rotation_mat @ p for p in positions]
+        positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
+        rotation_mat = np.array([[1, 1],
+                                 [-1, 1]])
         positions.append([0, 0])
-        positions.append([np.sqrt(2), 0])
+        positions.append([0.5, 0.5])
+        positions = [rotation_mat @ p for p in positions]
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
-
-    @staticmethod
-    def find_max_list(lst):
-        """
-        Finds longest element in list of lists
-        Args:
-            lst: some iterable variable, list, set, etc
-        """
-        max_list = max(lst, key=lambda i: len(i))
-        return max_list
 
     def node_position(self, index):
         """
@@ -75,19 +67,13 @@ class Graph:
         """
         return self.nodes[index].position
 
-    @property
-    def minkowski_metric(self):
-        identity = np.identity(n=self.d)
-        identity[0][0] *= -1
-        return identity
-
     def make_edges_minkowski(self):
         """
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
         for node1, node2 in combinations(self.nodes, 2):
-            interval = self.interval((node1, node2))
+            interval = self.interval((node1.node, node2.node))
 
             if -self.radius * self.radius < interval < 0:
                 edge = (node1.node, node2.node)
@@ -99,19 +85,14 @@ class Graph:
         """
         ds^2 between two nodes
         Args:
-            node_pair: either the index or the node itself
+            node_pair: the index of each node in a tuple
         """
-        if all([isinstance(node, int) for node in node_pair]):
-            pos0 = self.node_position(node_pair[0])
-            pos1 = self.node_position(node_pair[1])
-        elif all([isinstance(node, Node) for node in node_pair]):
-            pos0 = node_pair[0].position
-            pos1 = node_pair[1].position
-        else:
-            raise AttributeError("wrong format of node passed to distance function")
+        pos0 = self.node_position(node_pair[0])
+        pos1 = self.node_position(node_pair[1])
+
         dx = np.array(pos1) - np.array(pos0)
 
-        return self.minkowski_metric @ dx @ dx
+        return dx @ self.minkowski_metric @ dx
 
     def proper_time(self, node_pair):
         return np.sqrt(-self.interval(node_pair))
@@ -201,22 +182,21 @@ class Graph:
 
 if __name__ == "__main__":
     import cProfile, pstats, io
-
     pr = cProfile.Profile()
     pr.enable()
-    n = 100
+
+    n = 3000
     graph = Graph(n, 0.3, 2)
     graph.generate_nodes()
     graph.make_edges_minkowski()
     graph.find_order()
-    print(graph.order)
-    # print(graph.geometric_length())
-    # print(graph.longest_path)
-    # print(graph.angular_deviation())
+    print(graph.geometric_length())
+    print(graph.longest_path)
+    print(graph.angular_deviation())
     g = nx.DiGraph()
     g.add_nodes_from(range(n))
     g.add_edges_from(graph.edges)
     nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    # plt.show()
+    plt.show()
     filename = 'profile.prof'  # You can change this if needed
     pr.dump_stats(filename)
