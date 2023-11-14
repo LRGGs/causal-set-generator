@@ -5,7 +5,7 @@ from itertools import combinations
 import matplotlib
 from dataclasses import dataclass
 
-matplotlib.use("TkAgg")
+#matplotlib.use("TkAgg")
 
 
 @dataclass
@@ -90,11 +90,7 @@ class Graph:
             interval = self.interval((node1, node2))
 
             if -self.radius * self.radius < interval < 0:
-                edge = (
-                    (node1.node, node2.node)
-                    if node1.position[0] < node2.position[0]
-                    else (node2.node, node1.node)
-                )
+                edge = (node1.node, node2.node)
                 self.edges.append(edge)
                 self.neighbours[edge[0]].children.append(edge[1])
                 self.neighbours[edge[1]].parents.append(edge[0])
@@ -165,9 +161,9 @@ class Graph:
                 self.direction_first_search(relative, vis, direction)
 
             current_order = getattr(self.order[node], direction_to_order_map[direction])
-            child_order = getattr(self.order[relative], direction_to_order_map[direction])
+            relative_order = getattr(self.order[relative], direction_to_order_map[direction])
 
-            setattr(self.order[node], direction_to_order_map[direction], max([current_order, child_order + 1]))
+            setattr(self.order[node], direction_to_order_map[direction], max([current_order, relative_order + 1]))
 
     def angular_deviation(self, path=None):
         """
@@ -204,6 +200,10 @@ class Graph:
 
 
 if __name__ == "__main__":
+    import cProfile, pstats, io
+
+    pr = cProfile.Profile()
+    pr.enable()
     n = 100
     graph = Graph(n, 0.3, 2)
     graph.generate_nodes()
@@ -217,4 +217,6 @@ if __name__ == "__main__":
     g.add_nodes_from(range(n))
     g.add_edges_from(graph.edges)
     nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    plt.show()
+    # plt.show()
+    filename = 'profile.prof'  # You can change this if needed
+    pr.dump_stats(filename)
