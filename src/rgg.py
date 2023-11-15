@@ -1,11 +1,13 @@
-import numpy as np
+import random
+from dataclasses import dataclass
+from itertools import combinations
+
+import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
-from itertools import combinations
-import matplotlib
-from dataclasses import dataclass
+import numpy as np
 
-#matplotlib.use("TkAgg")
+matplotlib.use("TkAgg")
 
 
 @dataclass
@@ -22,10 +24,18 @@ class Order:
 
 
 @dataclass
-class Neighbours:
+class Relatives:
     node: int
     children: list
     parents: list
+
+
+@dataclass
+class Paths:
+    longest: list
+    greedy: list
+    random: list
+    shortest: list
 
 
 class Graph:
@@ -43,18 +53,17 @@ class Graph:
         self.d = d
         self.radius = radius
         self.edges = []
-        self.longest_path = []
-        self.neighbours = [Neighbours(_, [], []) for _ in range(self.n)]
+        self.relatives = [Relatives(_, [], []) for _ in range(self.n)]
         self.nodes = []
         self.order = [Order(node, 0, 0) for node in range(self.n)]
         identity = np.identity(n=self.d)
         identity[0][0] *= -1
         self.minkowski_metric = identity
+        self.paths = Paths([], [], [], [])
 
     def generate_nodes(self):
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
-        rotation_mat = np.array([[1, 1],
-                                 [-1, 1]])
+        rotation_mat = np.array([[1, 1], [-1, 1]])
         positions.append([0, 0])
         positions.append([0.5, 0.5])
         positions = [rotation_mat @ p for p in positions]
@@ -78,8 +87,8 @@ class Graph:
             if -self.radius * self.radius < interval < 0:
                 edge = (node1.node, node2.node)
                 self.edges.append(edge)
-                self.neighbours[edge[0]].children.append(edge[1])
-                self.neighbours[edge[1]].parents.append(edge[0])
+                self.relatives[edge[0]].children.append(edge[1])
+                self.relatives[edge[1]].parents.append(edge[0])
 
     def interval(self, node_pair):
         """
@@ -116,7 +125,7 @@ class Graph:
     def find_order(self):
         """"""
         possible_directions = ["children", "parents"]
-        direction_to_start_map = {"children": 0, "parents": self.n -1}
+        direction_to_start_map = {"children": 0, "parents": self.n - 1}
         for direction in possible_directions:
             vis = [False] * self.n
             node = direction_to_start_map[direction]
@@ -132,19 +141,46 @@ class Graph:
         Args:
             node: the parent node we are considering
             vis: which nodes have already been visited
-            direction:
+            direction: either look through parents or children
         """
         direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
-        for relative in getattr(self.neighbours[node], direction):
+        for relative in getattr(self.relatives[node], direction):
             if not vis[relative]:
                 self.direction_first_search(relative, vis, direction)
 
             current_order = getattr(self.order[node], direction_to_order_map[direction])
-            relative_order = getattr(self.order[relative], direction_to_order_map[direction])
+            relative_order = getattr(
+                self.order[relative], direction_to_order_map[direction]
+            )
 
-            setattr(self.order[node], direction_to_order_map[direction], max([current_order, relative_order + 1]))
+            setattr(
+                self.order[node],
+                direction_to_order_map[direction],
+                max([current_order, relative_order + 1]),
+            )
+
+    def longest_path(self):
+        """
+        Run this only after finding the order. Randomly choose
+        a valid sequential path from nodes with the highest order.
+        Returns:
+            longest path list of edges
+        """
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            current_depth = self.order[node.node].depth
+            valid_children = [
+                child
+                for child in self.relatives[node.node].children
+                if self.order[child].depth == current_depth - 1
+            ]
+            next_node = random.choice(valid_children)
+            path.append((node.node, next_node))
+            node = self.nodes[next_node]
+        self.paths.longest = path
 
     def angular_deviation(self, path=None):
         """
@@ -181,22 +217,25 @@ class Graph:
 
 
 if __name__ == "__main__":
-    import cProfile, pstats, io
+    import cProfile
+    import io
+    import pstats
+
     pr = cProfile.Profile()
     pr.enable()
 
-    n = 3000
+    n = 15
     graph = Graph(n, 0.3, 2)
     graph.generate_nodes()
     graph.make_edges_minkowski()
     graph.find_order()
-    print(graph.geometric_length())
-    print(graph.longest_path)
-    print(graph.angular_deviation())
+    graph.longest_path()
+    print(graph.paths.longest)
+    print(graph.order)
     g = nx.DiGraph()
     g.add_nodes_from(range(n))
     g.add_edges_from(graph.edges)
     nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
     plt.show()
-    filename = 'profile.prof'  # You can change this if needed
+    filename = "profile.prof"  # You can change this if needed
     pr.dump_stats(filename)
