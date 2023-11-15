@@ -1,6 +1,7 @@
 import random
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, chain
+import multiprocessing
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -36,6 +37,21 @@ class Paths:
     greedy: list
     random: list
     shortest: list
+
+
+def multi_edge(node_pairs, r_squared):
+    edges = []
+
+    for node1, node2 in node_pairs:
+        pos0 = node1.position
+        pos1 = node2.position
+        dx = pos1 - pos0
+
+        separation = -dx[0]**2 + sum([dx[i]**2 for i in range(1, len(dx)-1)])
+
+        if -r_squared < separation < 0:
+            edges.append((node1.node, node2.node))
+    return edges
 
 
 class Graph:
@@ -81,6 +97,7 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
+
         for node1, node2 in combinations(self.nodes, 2):
             interval = self.interval((node1.node, node2.node))
 
@@ -89,6 +106,20 @@ class Graph:
                 self.edges.append(edge)
                 self.relatives[edge[0]].children.append(edge[1])
                 self.relatives[edge[1]].parents.append(edge[0])
+
+    def make_edges_minkowski_multi(self):
+        node_pairs = np.array([(node1, node2) for node1, node2 in combinations(self.nodes, 2)])
+        cpus = multiprocessing.cpu_count()
+        p = multiprocessing.Pool(processes=cpus - 1)
+        pair_lists = np.array_split(node_pairs, cpus-1)
+        inputs = [[pairs, self.radius**2] for pairs in pair_lists]
+        results = p.starmap(multi_edge, inputs)
+        for edges in results:
+            for edge in edges:
+                self.edges.append(edge)
+                self.relatives[edge[0]].children.append(edge[1])
+                self.relatives[edge[1]].parents.append(edge[0])
+
 
     def interval(self, node_pair):
         """
@@ -99,7 +130,7 @@ class Graph:
         pos0 = self.node_position(node_pair[0])
         pos1 = self.node_position(node_pair[1])
 
-        dx = np.array(pos1) - np.array(pos0)
+        dx = pos1 - pos0
 
         return dx @ self.minkowski_metric @ dx
 
@@ -216,26 +247,34 @@ class Graph:
         return deviation
 
 
+def run():
+    n = 3000
+    graph = Graph(n, 0.3, 2)
+    graph.generate_nodes()
+    graph.make_edges_minkowski_multi()
+    # graph.find_order()
+    # graph.longest_path()
+    # print(graph.paths.longest)
+    # print(graph.order)
+    # g = nx.DiGraph()
+    # g.add_nodes_from(range(n))
+    # g.add_edges_from(graph.edges)
+    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+    # plt.show()
+
+
 if __name__ == "__main__":
     import cProfile
     import io
     import pstats
 
-    pr = cProfile.Profile()
-    pr.enable()
+    # pr = cProfile.Profile()
+    # pr.enable()
+    #
+    # run()
+    #
+    # filename = "profile.prof"  # You can change this if needed
+    # pr.dump_stats(filename)
 
-    n = 15
-    graph = Graph(n, 0.3, 2)
-    graph.generate_nodes()
-    graph.make_edges_minkowski()
-    graph.find_order()
-    graph.longest_path()
-    print(graph.paths.longest)
-    print(graph.order)
-    g = nx.DiGraph()
-    g.add_nodes_from(range(n))
-    g.add_edges_from(graph.edges)
-    nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    plt.show()
-    filename = "profile.prof"  # You can change this if needed
-    pr.dump_stats(filename)
+    cProfile.run('run()', 'profiler')
+    pstats.Stats('profiler').strip_dirs().sort_stats('tottime').print_stats()
