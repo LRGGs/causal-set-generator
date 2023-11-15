@@ -4,14 +4,41 @@ import matplotlib.pyplot as plt
 from max_graph import Network
 
 matplotlib.use("TkAgg")
+plt.style.use("ggplot")
 
-net1 = Network(1e5, 1)
+plotted_orders = 4  # how many orders away from maximum order do you want to plot
+
+# Create Network
+net1 = Network(3e3, 3)
 net1.find_order()
 
-l1, l2, l3, s1, s2, s3 = net1.order_collections()
+collections = net1.order_collections()  # work out which nodes belong to what order (from min order to max order)
+print("max and min orders are {}".format(net1.max_order, net1.min_order))
 
-net1.plot_nodes()
-plt.plot(l1[:, 1], l1[:, 0], "ro", label="Max Order")
-# plt.plot(s1[:, 1], s1[:, 0], "bo", label='Min Order')
+# Find standard deviation of each collection from geodesic
+collection_sds = []
+relevant_orders = []
+for collection_index, collection in enumerate(collections):
+    if len(collection) < 5:  # don't include very small collections
+        continue
+    squares = 0
+    for pos in collection:
+        squares += pos[1] * pos[1]
+    collection_sds.append(squares / (len(collection) + 1))
+    relevant_orders.append(net1.min_order + collection_index)
+
+# Plotting
+
+net1.plot_nodes()  # all nodes
+# nodes in max collection and "plotted orders" from it
+for n in range(1, plotted_orders + 1):
+    plt.plot(collections[-n][:, 1], collections[-n][:, 0], "o", label="Order {}".format(net1.max_order - n + 1))
 plt.legend()
 plt.show()
+
+plt.bar(relevant_orders, collection_sds)
+print(collection_sds)
+plt.xlabel("Order (Height + Depth)")
+plt.ylabel("Standard Deviation from Geodesic")
+plt.show()
+
