@@ -39,7 +39,7 @@ class Paths:
     shortest: list
 
 
-def multi_edge(node_pairs, r_squared):
+def multi_edge(node_pairs, r_squared, metric):
     edges = []
 
     for node1, node2 in node_pairs:
@@ -47,7 +47,7 @@ def multi_edge(node_pairs, r_squared):
         pos1 = node2.position
         dx = pos1 - pos0
 
-        separation = -dx[0] ** 2 + sum([dx[i] ** 2 for i in range(1, len(dx) - 1)])
+        separation = dx @ metric @ dx
 
         if -r_squared < separation < 0:
             edges.append((node1.node, node2.node))
@@ -114,8 +114,9 @@ class Graph:
         p = multiprocessing.Pool(processes=cpus)
 
         pair_lists = [node_pairs[i:i + cpus] for i in range(0, len(node_pairs), cpus)]
+        radius_squared = self.radius**2
 
-        inputs = [[pairs, self.radius**2] for pairs in pair_lists]
+        inputs = [[pairs, radius_squared, self.minkowski_metric] for pairs in pair_lists]
         results = p.starmap(multi_edge, inputs)
         for edges in results:
             for edge in edges:
@@ -279,19 +280,19 @@ class Graph:
 
 
 def run():
-    n = 300
+    n = 3000
     graph = Graph(n, 0.3, 2)
     graph.generate_nodes()
     graph.make_edges_minkowski_multi()
     graph.find_order()
     graph.longest_path()
-    print(graph.paths.longest)
-    print(graph.order)
-    g = nx.DiGraph()
-    g.add_nodes_from(range(n))
-    g.add_edges_from(graph.edges)
-    nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    plt.show()
+    # print(graph.paths.longest)
+    # print(graph.order)
+    # g = nx.DiGraph()
+    # g.add_nodes_from(range(n))
+    # g.add_edges_from(graph.edges)
+    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+    # plt.show()
 
 
 if __name__ == "__main__":
