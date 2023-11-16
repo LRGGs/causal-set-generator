@@ -48,7 +48,9 @@ class Network:
         edge_store = []
         child_store = [[] * self.N]
         parent_store = [[] * self.N]
-        for i, j in itertools.combinations(range(self.N), 2):  # this only extracts forward pointing combs (topsort)
+        for i, j in itertools.combinations(
+            range(self.N), 2
+        ):  # this only extracts forward pointing combs (topsort)
             if 0 < self.prop_tau2(i, j) < self.R_squared:  # timelike
                 edge = np.array([i, j])
                 edge_store.append(edge)

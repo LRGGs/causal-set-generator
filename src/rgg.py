@@ -90,6 +90,14 @@ class Graph:
         self.random_path()
         self.greedy_path()
 
+    @property
+    def node_x_positions(self):
+        return [node.position[1] for node in self.nodes]
+
+    @property
+    def node_t_positions(self):
+        return [node.position[0] for node in self.nodes]
+
     def generate_nodes(self):
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
         rotation_mat = np.array([[1, 1], [-1, 1]])
@@ -135,9 +143,9 @@ class Graph:
         """
         for node in self.nodes:
             order = self.order[node.ind]
-            if (
-                order.height != 0 and order.depth != 0
-            ) or (node.ind == 0 or node.ind == self.n - 1):
+            if (order.height != 0 and order.depth != 0) or (
+                node.ind == 0 or node.ind == self.n - 1
+            ):
                 self.connected_interval.append(node.ind)
 
     def interval(self, node_pair):
@@ -225,7 +233,8 @@ class Graph:
             valid_children = [
                 child
                 for child in self.relatives[node.ind].children
-                if child in self.connected_interval and self.order[child].depth == current_depth - 1
+                if child in self.connected_interval
+                and self.order[child].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.ind, next_node))
@@ -242,7 +251,11 @@ class Graph:
         path = []
         node = self.nodes[0]
         while node != self.nodes[-1]:
-            children = [child for child in self.relatives[node.ind].children if child in self.connected_interval]
+            children = [
+                child
+                for child in self.relatives[node.ind].children
+                if child in self.connected_interval
+            ]
             min_depth = min([self.order[child].depth for child in children])
             valid_children = [
                 child for child in children if self.order[child].depth == min_depth
@@ -265,7 +278,10 @@ class Graph:
             valid_children = [
                 child
                 for child in self.relatives[node.ind].children
-                if child in self.connected_interval and (self.order[child].depth != 0 or self.nodes[child] == self.nodes[-1])
+                if child in self.connected_interval
+                and (
+                    self.order[child].depth != 0 or self.nodes[child] == self.nodes[-1]
+                )
             ]
             next_node = random.choice(valid_children)
             path.append((node.ind, next_node))
@@ -284,12 +300,30 @@ class Graph:
         while node != self.nodes[-1]:
             child_intervals = [
                 (child, self.interval((node.ind, child)))
-                for child in self.relatives[node.ind].children if child in self.connected_interval
+                for child in self.relatives[node.ind].children
+                if child in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.ind, next_node))
             node = self.nodes[next_node]
         self.paths.greedy = path
+
+    def path_positions(self, path="longest"):
+        """
+        return all the node positions along a chosen path
+        Args:
+            path: choice between "longest", "shortest", "random", and "greedy"
+        """
+        path = getattr(self.paths, path)
+        node_positions = [self.nodes[edge[0]].position for edge in path]
+        node_positions.append(self.nodes[path[-1][1]].position)
+        return np.array(node_positions)
+
+    def plot_nodes(self):
+        """
+        Plot all nodes on a pyplot plot without showing it yet
+        """
+        plt.plot(self.node_x_positions, self.node_t_positions, "g,")
 
 
 def run():
@@ -302,10 +336,18 @@ def run():
     print(graph.paths.shortest)
     print(graph.paths.random)
     print(graph.paths.greedy)
-    g = nx.DiGraph()
-    g.add_nodes_from(range(n))
-    g.add_edges_from(graph.edges)
-    nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+
+    # g = nx.DiGraph()
+    # g.add_nodes_from(range(n))
+    # g.add_edges_from(graph.edges)
+    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+
+    graph.plot_nodes()
+    for i in ["longest", "shortest", "random", "greedy"]:
+        path = graph.path_positions(i)
+        plt.plot(path[:, 1], path[:, 0], "o", label=i)
+
+    plt.legend()
     plt.show()
 
 
