@@ -46,11 +46,9 @@ class Network:
 
         # Connect Nodes
         edge_store = []
-        child_store = [[] for i in range(self.N)]
-        parent_store = [[] for i in range(self.N)]
-        for i, j in itertools.combinations(
-            range(self.N), 2
-        ):  # this only extracts forward pointing combs (topsort)
+        child_store = [[] * self.N]
+        parent_store = [[] * self.N]
+        for i, j in itertools.combinations(range(self.N), 2):  # this only extracts forward pointing combs (topsort)
             if 0 < self.prop_tau2(i, j) < self.R_squared:  # timelike
                 edge = np.array([i, j])
                 edge_store.append(edge)
@@ -100,12 +98,9 @@ class Network:
                 for _ in self.order
             ]
         )
-        try:
-            self.max_order = int(np.nanmax(tot_order))
-            self.min_order = int(np.nanmin(tot_order))
-        except:
-            self.max_order = 0
-            self.min_order = 0
+
+        self.max_order = int(np.nanmax(tot_order))
+        self.min_order = int(np.nanmin(tot_order))
 
         collections = []
         for order in range(self.min_order, self.max_order + 1):
