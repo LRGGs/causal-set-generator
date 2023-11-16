@@ -1,7 +1,7 @@
+import multiprocessing
 import random
 from dataclasses import dataclass
-from itertools import combinations, chain
-import multiprocessing
+from itertools import chain, combinations
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -47,7 +47,7 @@ def multi_edge(node_pairs, r_squared):
         pos1 = node2.position
         dx = pos1 - pos0
 
-        separation = -dx[0]**2 + sum([dx[i]**2 for i in range(1, len(dx)-1)])
+        separation = -dx[0] ** 2 + sum([dx[i] ** 2 for i in range(1, len(dx) - 1)])
 
         if -r_squared < separation < 0:
             edges.append((node1.node, node2.node))
@@ -108,10 +108,12 @@ class Graph:
                 self.relatives[edge[1]].parents.append(edge[0])
 
     def make_edges_minkowski_multi(self):
-        node_pairs = np.array([(node1, node2) for node1, node2 in combinations(self.nodes, 2)])
+        node_pairs = np.array(
+            [(node1, node2) for node1, node2 in combinations(self.nodes, 2)]
+        )
         cpus = multiprocessing.cpu_count()
         p = multiprocessing.Pool(processes=cpus - 1)
-        pair_lists = np.array_split(node_pairs, cpus-1)
+        pair_lists = np.array_split(node_pairs, cpus - 1)
         inputs = [[pairs, self.radius**2] for pairs in pair_lists]
         results = p.starmap(multi_edge, inputs)
         for edges in results:
@@ -119,7 +121,6 @@ class Graph:
                 self.edges.append(edge)
                 self.relatives[edge[0]].children.append(edge[1])
                 self.relatives[edge[1]].parents.append(edge[0])
-
 
     def interval(self, node_pair):
         """
@@ -145,7 +146,7 @@ class Graph:
             edges in this path
         """
         if path is None:
-            path = self.longest_path
+            path = self.paths.longest
 
         tot_distance = 0
         for node_pair in path:
@@ -213,38 +214,67 @@ class Graph:
             node = self.nodes[next_node]
         self.paths.longest = path
 
-    def angular_deviation(self, path=None):
+    def shortest_path(self):
         """
-        Find the total angular deviation along a path
-        Args:
-            path: a list of edges included in the path
+        Run this only after finding the order. Randomly choose
+        a valid sequential path from nodes with the lowest order.
+        Returns:
+            shortest path list of edges
         """
-        if path is None:
-            path = self.longest_path
-        ordered_path = sorted(path, key=lambda e: e[0])
-        angle_index_combos = [
-            (i, j) for i, j in combinations([_ for _ in range(self.d)], 2)
-        ]
-
-        angles = []
-        for node_pair in ordered_path:
-            position_changes = [
-                self.node_position(node_pair[1])[d]
-                - self.node_position(node_pair[0])[d]
-                for d in range(self.d)
-            ]
-            angles.append(
-                [
-                    np.arctan(position_changes[i] / position_changes[j])
-                    for i, j in angle_index_combos
-                ]
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            min_depth = min(
+                [child.depth for child in self.relatives[node.node].children]
             )
+            valid_children = [
+                child
+                for child in self.relatives[node.node].children
+                if self.order[child].depth == min_depth
+            ]
+            next_node = random.choice(valid_children)
+            path.append((node.node, next_node))
+            node = self.nodes[next_node]
+        self.paths.shortest = path
 
-        print(angles)
-        deviation = []
-        for i, j in zip(angles[0::], angles[1::]):
-            deviation.append([j[d] - i[d] for d in range(len(i))])
-        return deviation
+    def random_path(self):
+        """
+        Run this only after finding the order. Randomly choose
+        a valid sequential path.
+        Returns:
+            random path list of edges
+        """
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            valid_children = [
+                child
+                for child in self.relatives[node.node].children
+                if self.order[child].depth != 0 or self.nodes[child] == self.nodes[-1]
+            ]
+            next_node = random.choice(valid_children)
+            path.append((node.node, next_node))
+            node = self.nodes[next_node]
+        self.paths.random = path
+
+    def greedy_path(self):
+        """
+        Run this only after finding the order. Choose the next
+        node at each step as the node with the largest interval.
+        Returns:
+            greedy path list of edges
+        """
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            child_intervals = [
+                (child, self.interval((node.node, child)))
+                for child in self.relatives[node.node].children
+            ]
+            next_node = max(child_intervals, key=lambda l: l[1])[0]
+            path.append((node.node, next_node))
+            node = self.nodes[next_node]
+        self.paths.greedy = path
 
 
 def run():
@@ -276,5 +306,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run('run()', 'profiler')
-    pstats.Stats('profiler').strip_dirs().sort_stats('tottime').print_stats()
+    cProfile.run("run()", "profiler")
+    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
