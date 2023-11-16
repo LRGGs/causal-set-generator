@@ -8,6 +8,7 @@
         as well as the algorithms needed for relevant computations on the network.
 """
 import itertools
+import random
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -95,6 +96,65 @@ class Network:
 
     def plot_nodes(self):
         plt.plot(self.positions[:, 1], self.positions[:, 0], "g.")
+
+    def longest_path(self):
+        path = []
+        node = 0
+        while node != self.N - 1:
+            current_depth = self.order[node][0]
+            good_children = [  # children that are on longest paths
+                child for child in self.children[node]
+                if self.order[child][0] == current_depth - 1
+            ]
+            next_node = random.choice(good_children)
+            path.append((node, next_node))
+            node = next_node
+
+        path_tau_squared = [
+            self.prop_tau2(edge[0], edge[1]) for edge in path
+        ]
+
+        return path, path_tau_squared
+
+    def shortest_path(self):
+        path = []
+        node = 0
+        while node != self.N - 1:
+            current_depth = self.order[node][0]
+            depth_differences = [  # between current node and its children
+                self.order[child][0] - current_depth
+                for child in self.children[0]
+            ]
+            min_index = depth_differences.index(min(depth_differences))
+            next_node = self.children[node][min_index]
+
+            path.append((node, next_node))
+            node = next_node
+
+        path_tau_squared = [
+            self.prop_tau2(edge[0], edge[1]) for edge in path
+        ]
+
+        return path, path_tau_squared
+
+    def greedy_path(self):
+        path = []
+        node = 0
+        while node != self.N - 1:
+            distances_to_children = [
+                self.prop_tau2(node, child) for child in self.children[node]
+            ]
+            min_index = distances_to_children.index(min(distances_to_children))
+            next_node = self.children[node][min_index]
+
+            path.append((node, next_node))
+            node = next_node
+
+        path_tau_squared = [
+            self.prop_tau2(edge[0], edge[1]) for edge in path
+        ]
+
+        return path, path_tau_squared
 
 
 if __name__ == "__main__":
