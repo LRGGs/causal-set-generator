@@ -108,12 +108,13 @@ class Graph:
                 self.relatives[edge[1]].parents.append(edge[0])
 
     def make_edges_minkowski_multi(self):
-        node_pairs = np.array(
-            [(node1, node2) for node1, node2 in combinations(self.nodes, 2)]
-        )
-        cpus = multiprocessing.cpu_count()
-        p = multiprocessing.Pool(processes=cpus - 1)
-        pair_lists = np.array_split(node_pairs, cpus - 1)
+        node_pairs = [(node1, node2) for node1, node2 in combinations(self.nodes, 2)]
+
+        cpus = multiprocessing.cpu_count() - 1
+        p = multiprocessing.Pool(processes=cpus)
+
+        pair_lists = [node_pairs[i:i + cpus] for i in range(0, len(node_pairs), cpus)]
+
         inputs = [[pairs, self.radius**2] for pairs in pair_lists]
         results = p.starmap(multi_edge, inputs)
         for edges in results:
@@ -278,19 +279,19 @@ class Graph:
 
 
 def run():
-    n = 3000
+    n = 300
     graph = Graph(n, 0.3, 2)
     graph.generate_nodes()
     graph.make_edges_minkowski_multi()
-    # graph.find_order()
-    # graph.longest_path()
-    # print(graph.paths.longest)
-    # print(graph.order)
-    # g = nx.DiGraph()
-    # g.add_nodes_from(range(n))
-    # g.add_edges_from(graph.edges)
-    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    # plt.show()
+    graph.find_order()
+    graph.longest_path()
+    print(graph.paths.longest)
+    print(graph.order)
+    g = nx.DiGraph()
+    g.add_nodes_from(range(n))
+    g.add_edges_from(graph.edges)
+    nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -298,13 +299,13 @@ if __name__ == "__main__":
     import io
     import pstats
 
-    # pr = cProfile.Profile()
-    # pr.enable()
-    #
-    # run()
-    #
-    # filename = "profile.prof"  # You can change this if needed
-    # pr.dump_stats(filename)
+    pr = cProfile.Profile()
+    pr.enable()
 
-    cProfile.run("run()", "profiler")
-    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    run()
+
+    filename = "profile.prof"  # You can change this if needed
+    pr.dump_stats(filename)
+
+    # cProfile.run("run()", "profiler")
+    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
