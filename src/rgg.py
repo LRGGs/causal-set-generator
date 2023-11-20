@@ -5,7 +5,6 @@ from itertools import combinations
 
 import matplotlib
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 from numba import njit
 from numba.typed import List
@@ -15,7 +14,7 @@ matplotlib.use("TkAgg")
 
 @dataclass
 class Node:
-    ind: int
+    indx: int
     position: np.ndarray
 
 
@@ -56,7 +55,7 @@ def multi_edge(node_pairs, r_squared, metric):
     return edges
 
 
-@njit(parallel=True)
+@njit()
 def numba_edge(nodes, r2, metric):
     edges = List()
     for i in range(len(nodes)):
@@ -97,7 +96,7 @@ class Graph:
 
     def configure_graph(self):
         self.generate_nodes()
-        self.make_edges_minkowski_numba()
+        self.make_edges_minkowski_multi()
         # self.find_order()
         # self.find_valid_interval()
 
@@ -137,7 +136,9 @@ class Graph:
         and are time-like separated
         """
         edges = numba_edge(self.numba_nodes, self.radius**2, self.minkowski_metric)
-        print(edges)
+        for edge in edges:
+            self.relatives[edge[0]].children.append(edge[1])
+            self.relatives[edge[1]].parents.append(edge[0])
 
     def make_edges_minkowski_multi(self):
         """
@@ -353,7 +354,7 @@ class Graph:
 
 
 def run():
-    n = 300
+    n = 10000
     graph = Graph(n, 0.3, 2)
     graph.configure_graph()
     # graph.find_paths()
@@ -363,16 +364,10 @@ def run():
     # print(graph.paths.random)
     # print(graph.paths.greedy)
 
-    # g = nx.DiGraph()
-    # g.add_nodes_from(range(n))
-    # g.add_edges_from(graph.edges)
-    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-
     # graph.plot_nodes()
     # for i in ["longest", "shortest", "random", "greedy"]:
     #     path = graph.path_positions(i)
     #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    #
     # plt.legend()
     # plt.show()
 
