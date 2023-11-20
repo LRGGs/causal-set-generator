@@ -40,26 +40,32 @@ class Paths:
     shortest: list
 
 
-def multi_edge(node_pairs, nodes, r_squared, metric):
-    numba_node_pairs = List()
-    numba_nodes = List()
-    [numba_node_pairs.append(np.array(node_pair, dtype=np.int32)) for node_pair in node_pairs]
-    [numba_nodes.append(np.array(node, dtype=np.float32)) for node in nodes]
-    return list(numba_edge(numba_node_pairs, numba_nodes, r_squared, metric))
+def multi_edge(node_pairs, r_squared, metric):
+    edges = []
+
+    for node1, node2 in node_pairs:
+        pos0 = node1.position
+        pos1 = node2.position
+        dx = pos1 - pos0
+
+        separation = dx @ metric @ dx
+
+        if -r_squared < separation < 0:
+            edges.append((node1.indx, node2.indx))
+    return edges
 
 
 @njit()
-def numba_edge(node_pairs, nodes, r2, metric):
+def numba_edge(nodes, r2, metric):
     edges = List()
-    for i in range(len(node_pairs)):
-        indx1 = node_pairs[i][0]
-        indx2 = node_pairs[i][1]
-        pos1 = nodes[indx1]
-        pos2 = nodes[indx2]
-        dx = pos2 - pos1
-        interval = dx @ metric @ dx
-        if -r2 < interval < 0:
-            edges.append([indx1, indx2])
+    for i in range(len(nodes)):
+        for j in range(i+1, len(nodes)):
+            pos1 = nodes[i]
+            pos2 = nodes[j]
+            dx = pos2 - pos1
+            interval = dx @ metric @ dx
+            if -r2 < interval < 0:
+                edges.append([i, j])
     return edges
 
 
@@ -116,7 +122,6 @@ class Graph:
         positions = [rotation_mat @ p for p in positions]
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
-        self.pos_nodes = [np.array(pos, dtype=np.float32) for pos in positions]
         [self.numba_nodes.append(np.array(pos, dtype=np.float32)) for pos in positions]
 
     def node_position(self, index):
@@ -130,9 +135,7 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
-        node_pairs = List()
-        [node_pairs.append(np.array([node1.indx, node2.indx], dtype=np.int32)) for node1, node2 in combinations(self.nodes, 2)]
-        edges = numba_edge(node_pairs, self.numba_nodes, self.radius**2, self.minkowski_metric)
+        edges = numba_edge(self.numba_nodes, self.radius**2, self.minkowski_metric)
         for edge in edges:
             self.relatives[edge[0]].children.append(edge[1])
             self.relatives[edge[1]].parents.append(edge[0])
@@ -142,7 +145,7 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated. S
         """
-        node_pairs = [[node1.indx, node2.indx] for node1, node2 in combinations(self.nodes, 2)]
+        node_pairs = [(node1, node2) for node1, node2 in combinations(self.nodes, 2)]
 
         cpus = multiprocessing.cpu_count() - 1
         p = multiprocessing.Pool(processes=cpus)
@@ -151,7 +154,7 @@ class Graph:
         radius_squared = self.radius**2
 
         inputs = [
-            [pairs, self.pos_nodes, radius_squared, self.minkowski_metric] for pairs in pair_lists
+            [pairs, radius_squared, self.minkowski_metric] for pairs in pair_lists
         ]
         results = p.starmap(multi_edge, inputs)
         for edges in results:
@@ -351,7 +354,7 @@ class Graph:
 
 
 def run():
-    n = 3000
+    n = 10000
     graph = Graph(n, 0.3, 2)
     graph.configure_graph()
     # graph.find_paths()
