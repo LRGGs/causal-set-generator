@@ -7,7 +7,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from numba import jit
+from numba import njit
+from numba.typed import List
 
 matplotlib.use("TkAgg")
 
@@ -51,7 +52,21 @@ def multi_edge(node_pairs, r_squared, metric):
         separation = dx @ metric @ dx
 
         if -r_squared < separation < 0:
-            edges.append((node1.ind, node2.ind))
+            edges.append((node1.indx, node2.indx))
+    return edges
+
+
+@njit(parallel=True)
+def numba_edge(nodes, r2, metric):
+    edges = List()
+    for i in range(len(nodes)):
+        for j in range(i+1, len(nodes)):
+            pos1 = nodes[i]
+            pos2 = nodes[j]
+            dx = pos2 - pos1
+            interval = dx @ metric @ dx
+            if -r2 < interval < 0:
+                edges.append([i, j])
     return edges
 
 
@@ -72,8 +87,9 @@ class Graph:
         self.edges = []
         self.relatives = [Relatives(_, [], []) for _ in range(self.n)]
         self.nodes = []
+        self.numba_nodes = List()
         self.order = [Order(node, 0, 0) for node in range(self.n)]
-        identity = np.identity(n=self.d)
+        identity = np.identity(n=self.d, dtype=np.float32)
         identity[0][0] *= -1
         self.minkowski_metric = identity
         self.paths = Paths([], [], [], [])
@@ -81,9 +97,9 @@ class Graph:
 
     def configure_graph(self):
         self.generate_nodes()
-        self.make_edges_minkowski()
-        self.find_order()
-        self.find_valid_interval()
+        self.make_edges_minkowski_numba()
+        # self.find_order()
+        # self.find_valid_interval()
 
     def find_paths(self):
         self.longest_path()
@@ -107,6 +123,7 @@ class Graph:
         positions = [rotation_mat @ p for p in positions]
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
+        [self.numba_nodes.append(np.array(pos, dtype=np.float32)) for pos in positions]
 
     def node_position(self, index):
         """
@@ -114,19 +131,13 @@ class Graph:
         """
         return self.nodes[index].position
 
-    @jit(parallel=True)
-    def make_edges_minkowski(self):
+    def make_edges_minkowski_numba(self):
         """
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
-        for node1, node2 in combinations(self.nodes, 2):
-            interval = self.interval((node1.ind, node2.ind))
-            if -self.radius * self.radius < interval < 0:
-                edge = (node1.ind, node2.ind)
-                self.edges.append(edge)
-                self.relatives[edge[0]].children.append(edge[1])
-                self.relatives[edge[1]].parents.append(edge[0])
+        edges = numba_edge(self.numba_nodes, self.radius**2, self.minkowski_metric)
+        print(edges)
 
     def make_edges_minkowski_multi(self):
         """
@@ -157,11 +168,11 @@ class Graph:
         main source and sink
         """
         for node in self.nodes:
-            order = self.order[node.ind]
+            order = self.order[node.indx]
             if (order.height != 0 and order.depth != 0) or (
-                node.ind == 0 or node.ind == self.n - 1
+                node.indx == 0 or node.indx == self.n - 1
             ):
-                self.connected_interval.append(node.ind)
+                self.connected_interval.append(node.indx)
 
     def interval(self, node_pair):
         """
@@ -244,15 +255,15 @@ class Graph:
         path = []
         node = self.nodes[0]
         while node != self.nodes[-1]:
-            current_depth = self.order[node.ind].depth
+            current_depth = self.order[node.indx].depth
             valid_children = [
                 child
-                for child in self.relatives[node.ind].children
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
                 and self.order[child].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
-            path.append((node.ind, next_node))
+            path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.longest = path
 
@@ -268,7 +279,7 @@ class Graph:
         while node != self.nodes[-1]:
             children = [
                 child
-                for child in self.relatives[node.ind].children
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
             ]
             min_depth = min([self.order[child].depth for child in children])
@@ -276,7 +287,7 @@ class Graph:
                 child for child in children if self.order[child].depth == min_depth
             ]
             next_node = random.choice(valid_children)
-            path.append((node.ind, next_node))
+            path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.shortest = path
 
@@ -292,14 +303,14 @@ class Graph:
         while node != self.nodes[-1]:
             valid_children = [
                 child
-                for child in self.relatives[node.ind].children
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
                 and (
                     self.order[child].depth != 0 or self.nodes[child] == self.nodes[-1]
                 )
             ]
             next_node = random.choice(valid_children)
-            path.append((node.ind, next_node))
+            path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.random = path
 
@@ -314,12 +325,12 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             child_intervals = [
-                (child, self.interval((node.ind, child)))
-                for child in self.relatives[node.ind].children
+                (child, self.interval((node.indx, child)))
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
-            path.append((node.ind, next_node))
+            path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.greedy = path
 
@@ -342,7 +353,7 @@ class Graph:
 
 
 def run():
-    n = 3000
+    n = 300
     graph = Graph(n, 0.3, 2)
     graph.configure_graph()
     # graph.find_paths()
