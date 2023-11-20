@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "masters"
+version = "0.1.0"
+description = ""
+authors = ["AndrewsTDA <AndrewsTDA@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.26.2"
+matplotlib = "^3.8.2"
+networkx = "^3.2.1"
+numba = "^0.58.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

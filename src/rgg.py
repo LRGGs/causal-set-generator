@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from numba import jit
 
 matplotlib.use("TkAgg")
 
@@ -80,7 +81,7 @@ class Graph:
 
     def configure_graph(self):
         self.generate_nodes()
-        self.make_edges_minkowski_multi()
+        self.make_edges_minkowski()
         self.find_order()
         self.find_valid_interval()
 
@@ -112,6 +113,20 @@ class Graph:
         Find the position of a node given the index
         """
         return self.nodes[index].position
+
+    @jit(parallel=True)
+    def make_edges_minkowski(self):
+        """
+        Generate edges if two nodes are within self.radius of each other
+        and are time-like separated
+        """
+        for node1, node2 in combinations(self.nodes, 2):
+            interval = self.interval((node1.ind, node2.ind))
+            if -self.radius * self.radius < interval < 0:
+                edge = (node1.ind, node2.ind)
+                self.edges.append(edge)
+                self.relatives[edge[0]].children.append(edge[1])
+                self.relatives[edge[1]].parents.append(edge[0])
 
     def make_edges_minkowski_multi(self):
         """
@@ -330,25 +345,25 @@ def run():
     n = 3000
     graph = Graph(n, 0.3, 2)
     graph.configure_graph()
-    graph.find_paths()
+    # graph.find_paths()
 
-    print(graph.paths.longest)
-    print(graph.paths.shortest)
-    print(graph.paths.random)
-    print(graph.paths.greedy)
+    # print(graph.paths.longest)
+    # print(graph.paths.shortest)
+    # print(graph.paths.random)
+    # print(graph.paths.greedy)
 
     # g = nx.DiGraph()
     # g.add_nodes_from(range(n))
     # g.add_edges_from(graph.edges)
     # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
 
-    graph.plot_nodes()
-    for i in ["longest", "shortest", "random", "greedy"]:
-        path = graph.path_positions(i)
-        plt.plot(path[:, 1], path[:, 0], "o", label=i)
-
-    plt.legend()
-    plt.show()
+    # graph.plot_nodes()
+    # for i in ["longest", "shortest", "random", "greedy"]:
+    #     path = graph.path_positions(i)
+    #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
+    #
+    # plt.legend()
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -356,13 +371,13 @@ if __name__ == "__main__":
     import io
     import pstats
 
-    pr = cProfile.Profile()
-    pr.enable()
+    # pr = cProfile.Profile()
+    # pr.enable()
 
-    run()
+    # run()
 
-    filename = "profile.prof"  # You can change this if needed
-    pr.dump_stats(filename)
+    # filename = "profile.prof"  # You can change this if needed
+    # pr.dump_stats(filename)
 
-    # cProfile.run("run()", "profiler")
-    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    cProfile.run("run()", "profiler")
+    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
