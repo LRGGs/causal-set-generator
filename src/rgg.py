@@ -40,25 +40,16 @@ class Paths:
     shortest: list
 
 
-def multi_edge(node_pairs, r_squared, metric):
-    edges = []
-
-    for node1, node2 in node_pairs:
-        pos0 = node1.position
-        pos1 = node2.position
-        dx = pos1 - pos0
-
-        separation = dx @ metric @ dx
-
-        if -r_squared < separation < 0:
-            edges.append((node1.indx, node2.indx))
-    return edges
+def multi_edge(nodes, r_squared, metric, start):
+    numba_nodes = List()
+    [numba_nodes.append(np.array(node.position, dtype=np.float32)) for node in nodes]
+    return list(numba_edge(numba_nodes, r_squared, metric, start))
 
 
 @njit()
-def numba_edge(nodes, r2, metric):
+def numba_edge(nodes, r2, metric, start):
     edges = List()
-    for i in range(len(nodes)):
+    for i in range(start, len(nodes)):
         for j in range(i+1, len(nodes)):
             pos1 = nodes[i]
             pos2 = nodes[j]
@@ -96,7 +87,7 @@ class Graph:
 
     def configure_graph(self):
         self.generate_nodes()
-        self.make_edges_minkowski_multi()
+        self.make_edges_minkowski_numba()
         # self.find_order()
         # self.find_valid_interval()
 
@@ -132,10 +123,10 @@ class Graph:
 
     def make_edges_minkowski_numba(self):
         """
-        Generate edges if two nodes are within self.radius of each other
+        Generate edges if two nodes are within self.radius of each other hnbc  cfvgbncnfvgb
         and are time-like separated
         """
-        edges = numba_edge(self.numba_nodes, self.radius**2, self.minkowski_metric)
+        edges = numba_edge(self.numba_nodes, self.radius**2, self.minkowski_metric, start=0)
         for edge in edges:
             self.relatives[edge[0]].children.append(edge[1])
             self.relatives[edge[1]].parents.append(edge[0])
@@ -143,18 +134,16 @@ class Graph:
     def make_edges_minkowski_multi(self):
         """
         Generate edges if two nodes are within self.radius of each other
-        and are time-like separated. S
+        and are time-like separated.
         """
-        node_pairs = [(node1, node2) for node1, node2 in combinations(self.nodes, 2)]
-
         cpus = multiprocessing.cpu_count() - 1
+        starts = list(range(self.n))[0::self.n//(cpus-1)]
         p = multiprocessing.Pool(processes=cpus)
 
-        pair_lists = [node_pairs[i : i + cpus] for i in range(0, len(node_pairs), cpus)]
         radius_squared = self.radius**2
 
         inputs = [
-            [pairs, radius_squared, self.minkowski_metric] for pairs in pair_lists
+            [self.nodes, radius_squared, self.minkowski_metric, start] for start in starts
         ]
         results = p.starmap(multi_edge, inputs)
         for edges in results:
