@@ -1,7 +1,7 @@
 import multiprocessing
 import random
 from dataclasses import dataclass
-from itertools import combinations
+import pickle
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -40,26 +40,6 @@ class Paths:
     shortest: list
 
 
-def multi_edge(nodes, r_squared, metric, start):
-    numba_nodes = List()
-    [numba_nodes.append(np.array(node.position, dtype=np.float32)) for node in nodes]
-    return list(numba_edge(numba_nodes, r_squared, metric, start))
-
-
-@njit()
-def numba_edge(nodes, r2, metric, start):
-    edges = List()
-    for i in range(start, len(nodes)):
-        for j in range(i+1, len(nodes)):
-            pos1 = nodes[i]
-            pos2 = nodes[j]
-            dx = pos2 - pos1
-            interval = dx @ metric @ dx
-            if -r2 < interval < 0:
-                edges.append([i, j])
-    return edges
-
-
 class Graph:
     def __init__(self, n, radius, d):
         """
@@ -88,8 +68,8 @@ class Graph:
     def configure_graph(self):
         self.generate_nodes()
         self.make_edges_minkowski_numba()
-        # self.find_order()
-        # self.find_valid_interval()
+        self.find_order()
+        self.find_valid_interval()
 
     def find_paths(self):
         self.longest_path()
@@ -126,31 +106,24 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other hnbc  cfvgbncnfvgb
         and are time-like separated
         """
-        edges = numba_edge(self.numba_nodes, self.radius**2, self.minkowski_metric, start=0)
+        edges = self.numba_edges(self.numba_nodes, self.radius**2, self.minkowski_metric, start=0)
         for edge in edges:
             self.relatives[edge[0]].children.append(edge[1])
             self.relatives[edge[1]].parents.append(edge[0])
 
-    def make_edges_minkowski_multi(self):
-        """
-        Generate edges if two nodes are within self.radius of each other
-        and are time-like separated.
-        """
-        cpus = multiprocessing.cpu_count() - 1
-        starts = list(range(self.n))[0::self.n//(cpus-1)]
-        p = multiprocessing.Pool(processes=cpus)
-
-        radius_squared = self.radius**2
-
-        inputs = [
-            [self.nodes, radius_squared, self.minkowski_metric, start] for start in starts
-        ]
-        results = p.starmap(multi_edge, inputs)
-        for edges in results:
-            for edge in edges:
-                self.edges.append(edge)
-                self.relatives[edge[0]].children.append(edge[1])
-                self.relatives[edge[1]].parents.append(edge[0])
+    @staticmethod
+    @njit()
+    def numba_edges(nodes, r2, metric, start):
+        edges = List()
+        for i in range(start, len(nodes)):
+            for j in range(i + 1, len(nodes)):
+                pos1 = nodes[i]
+                pos2 = nodes[j]
+                dx = pos2 - pos1
+                interval = dx @ metric @ dx
+                if -r2 < interval < 0:
+                    edges.append([i, j])
+        return edges
 
     def find_valid_interval(self):
         """
@@ -341,12 +314,25 @@ class Graph:
         """
         plt.plot(self.node_x_positions, self.node_t_positions, "g,")
 
+    def order_collections(self):
+        return "Not Implemented"
 
-def run():
-    n = 10000
-    graph = Graph(n, 0.3, 2)
+    def pickle(self):
+        info = {
+            "nodes": self.nodes,
+            "order": self.order,
+            "order_collections": self.order_collections(),
+            "edges": self.edges,
+            "paths": self.paths,
+        }
+        # return pickle.dumps(info)
+        return info
+
+
+def run(n, r, d):
+    graph = Graph(n, r, d)
     graph.configure_graph()
-    # graph.find_paths()
+    graph.find_paths()
 
     # print(graph.paths.longest)
     # print(graph.paths.shortest)
@@ -359,6 +345,20 @@ def run():
     #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
     # plt.legend()
     # plt.show()
+
+    return graph.pickle()
+
+
+def multi_run(n, r, d, iters):
+    cpus = multiprocessing.cpu_count() - 1
+    p = multiprocessing.Pool(processes=cpus)
+
+    inputs = [
+        [n, r, d] for _ in range(iters)
+    ]
+    result = p.starmap(run, inputs)
+    for res in result:
+        print(res["paths"].longest)
 
 
 if __name__ == "__main__":
@@ -374,5 +374,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("run()", "profiler")
+    cProfile.run("multi_run(3000, 0.3, 2, 3)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
