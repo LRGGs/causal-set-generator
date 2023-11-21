@@ -325,8 +325,7 @@ class Graph:
             "edges": self.edges,
             "paths": self.paths,
         }
-        # return pickle.dumps(info)
-        return info
+        return pickle.dumps(info)
 
 
 def run(n, r, d):
@@ -358,7 +357,7 @@ def multi_run(n, r, d, iters):
     ]
     result = p.starmap(run, inputs)
     for res in result:
-        print(res["paths"].longest)
+        print(pickle.loads(res)["paths"].longest)
 
 
 if __name__ == "__main__":
