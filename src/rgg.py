@@ -5,6 +5,7 @@ import pickle
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numba.np.arraymath
 import numpy as np
 from numba import njit
 from numba.typed import List
@@ -106,23 +107,37 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other hnbc  cfvgbncnfvgb
         and are time-like separated
         """
-        edges = self.numba_edges(self.numba_nodes, self.radius**2, self.minkowski_metric, start=0)
-        for edge in edges:
+        self.edges = list(self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric))
+        for edge in self.edges:
             self.relatives[edge[0]].children.append(edge[1])
             self.relatives[edge[1]].parents.append(edge[0])
 
     @staticmethod
     @njit()
-    def numba_edges(nodes, r2, metric, start):
+    def numba_edges(nodes, r, metric):
+        r2 = r * r
         edges = List()
-        for i in range(start, len(nodes)):
-            for j in range(i + 1, len(nodes)):
-                pos1 = nodes[i]
-                pos2 = nodes[j]
-                dx = pos2 - pos1
-                interval = dx @ metric @ dx
-                if -r2 < interval < 0:
-                    edges.append([i, j])
+        if r < 0.5:
+            for i in range(len(nodes)):
+                l1 = (r + nodes[i][0] - nodes[i][1])
+                l2 = (r + nodes[i][0] + nodes[i][1])
+                for j in range(i + 1, len(nodes)):
+                    if nodes[j][0] - nodes[j][1] < l1 and nodes[j][0] + nodes[j][1] < l2:
+                        pos1 = nodes[i]
+                        pos2 = nodes[j]
+                        dx = pos2 - pos1
+                        interval = dx @ metric @ dx
+                        if -r2 < interval < 0:
+                            edges.append([i, j])
+        else:
+            for i in range(len(nodes)):
+                for j in range(i + 1, len(nodes)):
+                    pos1 = nodes[i]
+                    pos2 = nodes[j]
+                    dx = pos2 - pos1
+                    interval = dx @ metric @ dx
+                    if -r2 < interval < 0:
+                        edges.append([i, j])
         return edges
 
     def find_valid_interval(self):
@@ -338,12 +353,12 @@ def run(n, r, d):
     # print(graph.paths.random)
     # print(graph.paths.greedy)
 
-    # graph.plot_nodes()
-    # for i in ["longest", "shortest", "random", "greedy"]:
-    #     path = graph.path_positions(i)
-    #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    # plt.legend()
-    # plt.show()
+    graph.plot_nodes()
+    for i in ["longest", "shortest", "random", "greedy"]:
+        path = graph.path_positions(i)
+        plt.plot(path[:, 1], path[:, 0], "o", label=i)
+    plt.legend()
+    plt.show()
 
     return graph.pickle()
 
@@ -373,5 +388,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("multi_run(3000, 0.3, 2, 3)", "profiler")
+    cProfile.run("multi_run(5000, 0.3, 2, 1)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
