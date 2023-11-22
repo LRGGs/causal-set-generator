@@ -64,7 +64,7 @@ class Network:
 
         # Storage Container for the Order of Nodes
         self.order = np.array(
-            [[0, 0] for node in range(self.N)]
+              [[0, 0] for node in range(self.N)]
         )  # depth then height (bottom time point deepest)
 
     def find_order(self):
