@@ -104,7 +104,7 @@ class Graph:
 
     def make_edges_minkowski_numba(self):
         """
-        Generate edges if two nodes are within self.radius of each other hnbc  cfvgbncnfvgb
+        Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
         self.edges = list(self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric))
@@ -117,8 +117,9 @@ class Graph:
     def numba_edges(nodes, r, metric):
         r2 = r * r
         edges = List()
-        if r < 0.5:
+
             for i in range(len(nodes)):
+                # t_max = (r + node[i][0] + node[i][1] + 1) / 2
                 l1 = (r + nodes[i][0] - nodes[i][1])
                 l2 = (r + nodes[i][0] + nodes[i][1])
                 for j in range(i + 1, len(nodes)):
@@ -126,7 +127,7 @@ class Graph:
                         pos1 = nodes[i]
                         pos2 = nodes[j]
                         dx = pos2 - pos1
-                        interval = dx @ metric @ dx
+                        interval = metric @ dx @ dx
                         if -r2 < interval < 0:
                             edges.append([i, j])
         else:
@@ -145,12 +146,14 @@ class Graph:
         Find all nodes that are not a source or sink apart from the
         main source and sink
         """
+
+        self.connected_interval.append(self.nodes[0].indx)
         for node in self.nodes:
             order = self.order[node.indx]
-            if (order.height != 0 and order.depth != 0) or (
-                node.indx == 0 or node.indx == self.n - 1
-            ):
+            if order.height != 0 and order.depth != 0:
                 self.connected_interval.append(node.indx)
+        self.connected_interval.append(self.nodes[-1].indx)
+
 
     def interval(self, node_pair):
         """
@@ -163,20 +166,19 @@ class Graph:
 
         dx = pos1 - pos0
 
-        return dx @ self.minkowski_metric @ dx
+        return self.minkowski_metric @ dx @ dx
 
     def proper_time(self, node_pair):
         return np.sqrt(-self.interval(node_pair))
 
-    def geometric_length(self, path=None):
+    def geometric_length(self, path="longest"):
         """
         Find the geometric length of a path
         Args:
             path: a list of tuples of node pairs forming the
             edges in this path
         """
-        if path is None:
-            path = self.paths.longest
+        path = getattr(self.paths, path)
 
         tot_distance = 0
         for node_pair in path:
@@ -283,9 +285,6 @@ class Graph:
                 child
                 for child in self.relatives[node.indx].children
                 if child in self.connected_interval
-                and (
-                    self.order[child].depth != 0 or self.nodes[child] == self.nodes[-1]
-                )
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -329,14 +328,27 @@ class Graph:
         """
         plt.plot(self.node_x_positions, self.node_t_positions, "g,")
 
-    def order_collections(self):
-        return "Not Implemented"
+    def weight_collections(self):
+        tot_orders = [self.order[i].depth + self.order[i].height
+                     for i in self.connected_interval]
+        max_ord = max(tot_orders)
+        tot_orders = np.array(tot_orders)
+        weights = max_ord - tot_orders
+        max_weight, min_weight = max(weights), min(weights)
+
+        all_posses = np.array([self.nodes[node].position
+                               for node in self.connected_interval])
+        collections = []
+        for weight in range(min_weight, max_weight):
+            collections.append(all_posses[weights == weight])
+
+        return collections
 
     def pickle(self):
         info = {
             "nodes": self.nodes,
             "order": self.order,
-            "order_collections": self.order_collections(),
+            "weight_collections": self.weight_collections(),
             "edges": self.edges,
             "paths": self.paths,
         }
