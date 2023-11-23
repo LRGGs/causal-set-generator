@@ -1,5 +1,6 @@
 import multiprocessing
 import random
+import time
 from dataclasses import dataclass
 import pickle
 
@@ -107,39 +108,46 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
-        self.edges = list(self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric))
-        for edge in self.edges:
-            self.relatives[edge[0]].children.append(edge[1])
-            self.relatives[edge[1]].parents.append(edge[0])
+        a = time.time()
+        self.edges, children, parents = self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric)
+        children, parents = list(children), list(parents)
+        for i in range(self.n):
+            self.relatives[i].children = list(children[i])
+            self.relatives[i].parents = list(parents[i])
+        print(time.time() - a)
 
     @staticmethod
     @njit()
     def numba_edges(nodes, r, metric):
         r2 = r * r
         edges = List()
+        n = len(nodes)
+        children = List()
+        [children.append(List.empty_list(numba.int64)) for _ in range(n)]
+        parents = List()
+        [parents.append(List.empty_list(numba.int64)) for _ in range(n)]
 
-            for i in range(len(nodes)):
-                # t_max = (r + node[i][0] + node[i][1] + 1) / 2
-                l1 = (r + nodes[i][0] - nodes[i][1])
-                l2 = (r + nodes[i][0] + nodes[i][1])
-                for j in range(i + 1, len(nodes)):
-                    if nodes[j][0] - nodes[j][1] < l1 and nodes[j][0] + nodes[j][1] < l2:
-                        pos1 = nodes[i]
-                        pos2 = nodes[j]
-                        dx = pos2 - pos1
-                        interval = metric @ dx @ dx
-                        if -r2 < interval < 0:
-                            edges.append([i, j])
-        else:
-            for i in range(len(nodes)):
-                for j in range(i + 1, len(nodes)):
-                    pos1 = nodes[i]
-                    pos2 = nodes[j]
-                    dx = pos2 - pos1
-                    interval = dx @ metric @ dx
-                    if -r2 < interval < 0:
-                        edges.append([i, j])
-        return edges
+        for i in range(n):
+            node1 = nodes[i]
+            tmax = 0.5 * (1 + r + node1[0] - node1[1])
+            l1 = (r + node1[0] - node1[1])
+            l2 = (r + node1[0] + node1[1])
+            for j in range(i + 1, n):
+                node2 = nodes[j]
+                if node2[0] > tmax:
+                    break
+                if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
+                    continue
+                pos1 = node1
+                pos2 = node2
+                dx = pos2 - pos1
+                interval = dx @ metric @ dx
+                if -r2 < interval < 0:
+                    edges.append([i, j])
+                    children[i].append(j)
+                    parents[j].append(i)
+
+        return edges, children, parents
 
     def find_valid_interval(self):
         """
@@ -348,8 +356,8 @@ class Graph:
         info = {
             "nodes": self.nodes,
             "order": self.order,
-            "weight_collections": self.weight_collections(),
-            "edges": self.edges,
+            "order_collections": self.order_collections(),
+            "edges": list(self.edges),
             "paths": self.paths,
         }
         return pickle.dumps(info)
@@ -383,8 +391,8 @@ def multi_run(n, r, d, iters):
         [n, r, d] for _ in range(iters)
     ]
     result = p.starmap(run, inputs)
-    for res in result:
-        print(pickle.loads(res)["paths"].longest)
+    # for res in result:
+    #     print(pickle.loads(res)["paths"].longest)
 
 
 if __name__ == "__main__":
@@ -400,5 +408,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("multi_run(5000, 0.3, 2, 1)", "profiler")
+    cProfile.run("multi_run(10000, 0.3, 2, 3)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
