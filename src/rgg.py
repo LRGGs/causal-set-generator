@@ -29,7 +29,6 @@ class Order:
 
 @dataclass
 class Relatives:
-    node: int
     children: list
     parents: list
 
@@ -57,7 +56,7 @@ class Graph:
         self.d = d
         self.radius = radius
         self.edges = []
-        self.relatives = [Relatives(_, [], []) for _ in range(self.n)]
+        self.relatives = Relatives([], [])
         self.nodes = []
         self.numba_nodes = List()
         self.order = [Order(node, 0, 0) for node in range(self.n)]
@@ -110,10 +109,8 @@ class Graph:
         """
         a = time.time()
         self.edges, children, parents = self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric)
-        children, parents = list(children), list(parents)
-        for i in range(self.n):
-            self.relatives[i].children = list(children[i])
-            self.relatives[i].parents = list(parents[i])
+        self.relatives.children = list(children)
+        self.relatives.parents = list(parents)
         print(time.time() - a)
 
     @staticmethod
@@ -147,7 +144,25 @@ class Graph:
                     children[i].append(j)
                     parents[j].append(i)
 
-        return edges, children, parents
+        new_children = List.empty_list(numba.int64[:])
+        new_parents = List.empty_list(numba.int64[:])
+
+        for i in range(n):
+            kids = children[i]
+            kidz = len(kids)
+            a = np.zeros(kidz, dtype=np.int64)
+            for j in range(kidz):
+                a[j] = kids[j]
+            new_children.append(a)
+
+            pars = parents[i]
+            parz = len(pars)
+            a = np.zeros(parz, dtype=np.int64)
+            for j in range(parz):
+                a[j] = pars[j]
+            new_parents.append(a)
+
+        return edges, new_children, new_parents
 
     def find_valid_interval(self):
         """
@@ -217,7 +232,8 @@ class Graph:
         direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
-        for relative in getattr(self.relatives[node], direction):
+        for relative in getattr(self.relatives, direction)[node]:
+            relative = int(relative)
             if not vis[relative]:
                 self.direction_first_search(relative, vis, direction)
 
@@ -245,7 +261,7 @@ class Graph:
             current_depth = self.order[node.indx].depth
             valid_children = [
                 child
-                for child in self.relatives[node.indx].children
+                for child in self.relatives.children[node.indx]
                 if child in self.connected_interval
                 and self.order[child].depth == current_depth - 1
             ]
@@ -266,7 +282,7 @@ class Graph:
         while node != self.nodes[-1]:
             children = [
                 child
-                for child in self.relatives[node.indx].children
+                for child in self.relatives.children[node.indx]
                 if child in self.connected_interval
             ]
             min_depth = min([self.order[child].depth for child in children])
@@ -290,7 +306,7 @@ class Graph:
         while node != self.nodes[-1]:
             valid_children = [
                 child
-                for child in self.relatives[node.indx].children
+                for child in self.relatives.children[node.indx]
                 if child in self.connected_interval
                 and (
                     self.order[child].depth != 0 or self.nodes[child] == self.nodes[-1]
@@ -313,7 +329,7 @@ class Graph:
         while node != self.nodes[-1]:
             child_intervals = [
                 (child, self.interval((node.indx, child)))
-                for child in self.relatives[node.indx].children
+                for child in self.relatives.children[node.indx]
                 if child in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
@@ -346,7 +362,6 @@ class Graph:
             "nodes": self.nodes,
             "order": self.order,
             "order_collections": self.order_collections(),
-            "edges": list(self.edges),
             "paths": self.paths,
         }
         return pickle.dumps(info)
@@ -397,5 +412,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("multi_run(10000, 0.3, 2, 3)", "profiler")
+    cProfile.run("run(10000, 0.3, 2)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
