@@ -29,6 +29,7 @@ class Order:
 
 @dataclass
 class Relatives:
+    node: int
     children: list
     parents: list
 
@@ -56,7 +57,7 @@ class Graph:
         self.d = d
         self.radius = radius
         self.edges = []
-        self.relatives = Relatives([], [])
+        self.relatives = []
         self.nodes = []
         self.numba_nodes = List()
         self.order = [Order(node, 0, 0) for node in range(self.n)]
@@ -67,16 +68,34 @@ class Graph:
         self.connected_interval = []
 
     def configure_graph(self):
+        a = time.time()
         self.generate_nodes()
+        b = time.time()
         self.make_edges_minkowski_numba()
+        c = time.time()
         self.find_order()
+        d = time.time()
         self.find_valid_interval()
+        e = time.time()
+        print(f"gen nodes: {b-a}")
+        print(f"make edges: {c-b}")
+        print(f"find order: {d-c}")
+        print(f"find interval: {e-d}")
 
     def find_paths(self):
+        a = time.time()
         self.longest_path()
+        b = time.time()
         self.shortest_path()
+        c = time.time()
         self.random_path()
+        d = time.time()
         self.greedy_path()
+        e = time.time()
+        print(f"longest: {b-a}")
+        print(f"shortest: {c-b}")
+        print(f"random: {d-c}")
+        print(f"greedy: {e-d}")
 
     @property
     def node_x_positions(self):
@@ -107,11 +126,11 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
-        a = time.time()
         self.edges, children, parents = self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric)
-        self.relatives.children = list(children)
-        self.relatives.parents = list(parents)
-        print(time.time() - a)
+        children = list(children)
+        parents = list(parents)
+        for i in range(len(children)):
+            self.relatives.append(Relatives(i, list(children[i]), list(parents[i])))
 
     @staticmethod
     @njit()
@@ -222,7 +241,7 @@ class Graph:
         direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
-        for relative in list(getattr(self.relatives, direction)[node]):
+        for relative in getattr(self.relatives[node], direction):
             relative = int(relative)
             if not vis[relative]:
                 self.direction_first_search(relative, vis, direction)
@@ -251,7 +270,7 @@ class Graph:
             current_depth = self.order[node.indx].depth
             valid_children = [
                 child
-                for child in list(self.relatives.children[node.indx])
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
                 and self.order[child].depth == current_depth - 1
             ]
@@ -272,7 +291,7 @@ class Graph:
         while node != self.nodes[-1]:
             children = [
                 child
-                for child in list(self.relatives.children[node.indx])
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
             ]
             min_depth = min([self.order[child].depth for child in children])
@@ -296,7 +315,7 @@ class Graph:
         while node != self.nodes[-1]:
             valid_children = [
                 child
-                for child in list(self.relatives.children[node.indx])
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
             ]
             next_node = random.choice(valid_children)
@@ -316,7 +335,7 @@ class Graph:
         while node != self.nodes[-1]:
             child_intervals = [
                 (child, self.interval((node.indx, child)))
-                for child in list(self.relatives.children[node.indx])
+                for child in self.relatives[node.indx].children
                 if child in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
@@ -412,5 +431,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("run(10000, 0.3, 2)", "profiler")
+    cProfile.run("run(10000, 1, 2)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
