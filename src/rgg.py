@@ -177,7 +177,6 @@ class Graph:
                 self.connected_interval.append(node.indx)
         self.connected_interval.append(self.nodes[-1].indx)
 
-
     def interval(self, node_pair):
         """
         ds^2 between two nodes
@@ -372,7 +371,7 @@ class Graph:
         info = {
             "nodes": self.nodes,
             "order": self.order,
-            "order_collections": self.order_collections(),
+            "order_collections": self.weight_collections(),
             "paths": self.paths,
         }
         return pickle.dumps(info)
@@ -388,12 +387,12 @@ def run(n, r, d):
     # print(graph.paths.random)
     # print(graph.paths.greedy)
 
-    graph.plot_nodes()
-    for i in ["longest", "shortest", "random", "greedy"]:
-        path = graph.path_positions(i)
-        plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    plt.legend()
-    plt.show()
+    # graph.plot_nodes()
+    # for i in ["longest", "shortest", "random", "greedy"]:
+    #     path = graph.path_positions(i)
+    #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
+    # plt.legend()
+    # plt.show()
 
     return graph.pickle()
 
