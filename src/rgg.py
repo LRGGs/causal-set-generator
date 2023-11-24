@@ -127,11 +127,16 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
+        a = time.time()
         self.edges, children, parents = self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric)
+        b = time.time()
         children = list(children)
         parents = list(parents)
         for i in range(len(children)):
             self.relatives.append(Relatives(i, list(children[i]), list(parents[i])))
+        c = time.time()
+        print(f"numba: {b-a}")
+        print(f"loop: {c-b}")
 
     @staticmethod
     @njit()
@@ -158,16 +163,16 @@ class Graph:
                         children[i].append(j)
                         parents[j].append(i)
 
-        new_children = List.empty_list(numba.int64[:])
-        new_parents = List.empty_list(numba.int64[:])
+        new_children = List.empty_list(numba.int32[:])
+        new_parents = List.empty_list(numba.int32[:])
 
         for i in range(n):
-            a = np.zeros(len(children[i]), dtype=np.int64)
+            a = np.zeros(len(children[i]), dtype=np.int32)
             for j in range(len(children[i])):
                 a[j] = children[i][j]
             new_children.append(a)
 
-            a = np.zeros(len(parents[i]), dtype=np.int64)
+            a = np.zeros(len(parents[i]), dtype=np.int32)
             for j in range(len(parents[i])):
                 a[j] = parents[i][j]
             new_parents.append(a)
@@ -270,10 +275,10 @@ class Graph:
         while node != self.nodes[-1]:
             current_depth = self.order[node.indx].depth
             valid_children = [
-                child
+                int(child)
                 for child in self.relatives[node.indx].children
-                if child in self.connected_interval
-                and self.order[child].depth == current_depth - 1
+                if int(child) in self.connected_interval
+                and self.order[int(child)].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -291,9 +296,9 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             children = [
-                child
+                int(child)
                 for child in self.relatives[node.indx].children
-                if child in self.connected_interval
+                if int(child) in self.connected_interval
             ]
             min_depth = min([self.order[child].depth for child in children])
             valid_children = [
@@ -315,9 +320,9 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             valid_children = [
-                child
+                int(child)
                 for child in self.relatives[node.indx].children
-                if child in self.connected_interval
+                if int(child) in self.connected_interval
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -335,9 +340,9 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             child_intervals = [
-                (child, self.interval((node.indx, child)))
+                (int(child), self.interval((node.indx, int(child))))
                 for child in self.relatives[node.indx].children
-                if child in self.connected_interval
+                if int(child) in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
@@ -432,5 +437,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("run(100, 1, 2)", "profiler")
+    cProfile.run("run(10000, 0.3, 2)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
