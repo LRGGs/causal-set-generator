@@ -124,42 +124,32 @@ class Graph:
         parents = List()
         [parents.append(List.empty_list(numba.int64)) for _ in range(n)]
 
-        for i in range(n):
-            node1 = nodes[i]
-            tmax = 0.5 * (1 + r + node1[0] - node1[1])
-            l1 = (r + node1[0] - node1[1])
-            l2 = (r + node1[0] + node1[1])
-            for j in range(i + 1, n):
-                node2 = nodes[j]
-                if node2[0] > tmax:
-                    break
-                if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
-                    continue
-                pos1 = node1
-                pos2 = node2
-                dx = pos2 - pos1
-                interval = dx @ metric @ dx
-                if -r2 < interval < 0:
-                    edges.append([i, j])
-                    children[i].append(j)
-                    parents[j].append(i)
+        for i in range(len(nodes)):
+            l1 = (r + nodes[i][0] - nodes[i][1])
+            l2 = (r + nodes[i][0] + nodes[i][1])
+            for j in range(i + 1, len(nodes)):
+                if nodes[j][0] - nodes[j][1] < l1 and nodes[j][0] + nodes[j][1] < l2:
+                    pos1 = nodes[i]
+                    pos2 = nodes[j]
+                    dx = pos2 - pos1
+                    interval = dx @ metric @ dx
+                    if -r2 < interval < 0:
+                        edges.append([i, j])
+                        children[i].append(j)
+                        parents[j].append(i)
 
         new_children = List.empty_list(numba.int64[:])
         new_parents = List.empty_list(numba.int64[:])
 
         for i in range(n):
-            kids = children[i]
-            kidz = len(kids)
-            a = np.zeros(kidz, dtype=np.int64)
-            for j in range(kidz):
-                a[j] = kids[j]
+            a = np.zeros(len(children[i]), dtype=np.int64)
+            for j in range(len(children[i])):
+                a[j] = children[i][j]
             new_children.append(a)
 
-            pars = parents[i]
-            parz = len(pars)
-            a = np.zeros(parz, dtype=np.int64)
-            for j in range(parz):
-                a[j] = pars[j]
+            a = np.zeros(len(parents[i]), dtype=np.int64)
+            for j in range(len(parents[i])):
+                a[j] = parents[i][j]
             new_parents.append(a)
 
         return edges, new_children, new_parents
@@ -232,7 +222,7 @@ class Graph:
         direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
-        for relative in getattr(self.relatives, direction)[node]:
+        for relative in list(getattr(self.relatives, direction)[node]):
             relative = int(relative)
             if not vis[relative]:
                 self.direction_first_search(relative, vis, direction)
@@ -261,7 +251,7 @@ class Graph:
             current_depth = self.order[node.indx].depth
             valid_children = [
                 child
-                for child in self.relatives.children[node.indx]
+                for child in list(self.relatives.children[node.indx])
                 if child in self.connected_interval
                 and self.order[child].depth == current_depth - 1
             ]
@@ -282,7 +272,7 @@ class Graph:
         while node != self.nodes[-1]:
             children = [
                 child
-                for child in self.relatives.children[node.indx]
+                for child in list(self.relatives.children[node.indx])
                 if child in self.connected_interval
             ]
             min_depth = min([self.order[child].depth for child in children])
@@ -306,7 +296,7 @@ class Graph:
         while node != self.nodes[-1]:
             valid_children = [
                 child
-                for child in self.relatives.children[node.indx]
+                for child in list(self.relatives.children[node.indx])
                 if child in self.connected_interval
             ]
             next_node = random.choice(valid_children)
@@ -326,7 +316,7 @@ class Graph:
         while node != self.nodes[-1]:
             child_intervals = [
                 (child, self.interval((node.indx, child)))
-                for child in self.relatives.children[node.indx]
+                for child in list(self.relatives.children[node.indx])
                 if child in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
