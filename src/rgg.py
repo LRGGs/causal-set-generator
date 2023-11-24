@@ -106,6 +106,7 @@ class Graph:
         return [node.position[0] for node in self.nodes]
 
     def generate_nodes(self):
+        np.random.seed(1)
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
         rotation_mat = np.array([[1, 1], [-1, 1]])
         positions.append(np.array([0, 0]))
@@ -431,5 +432,5 @@ if __name__ == "__main__":
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("run(10000, 1, 2)", "profiler")
+    cProfile.run("run(100, 1, 2)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
