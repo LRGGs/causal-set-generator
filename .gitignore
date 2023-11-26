@@ -4,9 +4,7 @@ __pycache__/
 *$py.class
 
 # raw data
-src/data/raw_data/*
-src/data/pickled_data/*
-scripts/outputs/*
+data/
 
 # C extensions
 *.so

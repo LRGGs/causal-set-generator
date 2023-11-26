@@ -8,6 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numba.np.arraymath
 import numpy as np
+import networkx as nx
 from numba import njit
 from numba.typed import List
 
@@ -106,7 +107,7 @@ class Graph:
         return [node.position[0] for node in self.nodes]
 
     def generate_nodes(self):
-        np.random.seed(1)
+        # np.random.seed(1)
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
         rotation_mat = np.array([[1, 1], [-1, 1]])
         positions.append(np.array([0, 0]))
@@ -150,18 +151,22 @@ class Graph:
         [parents.append(List.empty_list(numba.int64)) for _ in range(n)]
 
         for i in range(len(nodes)):
-            l1 = (r + nodes[i][0] - nodes[i][1])
-            l2 = (r + nodes[i][0] + nodes[i][1])
-            for j in range(i + 1, len(nodes)):
-                if nodes[j][0] - nodes[j][1] < l1 and nodes[j][0] + nodes[j][1] < l2:
-                    pos1 = nodes[i]
-                    pos2 = nodes[j]
-                    dx = pos2 - pos1
-                    interval = dx @ metric @ dx
-                    if -r2 < interval < 0:
-                        edges.append([i, j])
-                        children[i].append(j)
-                        parents[j].append(i)
+            node1 = nodes[i]
+            tmax = 0.5 * (1 + r + node1[0] - node1[1])
+            l1 = (r + node1[0] - node1[1])
+            l2 = (r + node1[0] + node1[1])
+            for j in range(i + 1, n):
+                node2 = nodes[j]
+                if node2[0] > tmax:
+                    break
+                if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
+                    continue
+                dx = node2 - node1
+                interval = dx @ metric @ dx
+                if -r2 < interval < 0:
+                    edges.append([i, j])
+                    children[i].append(j)
+                    parents[j].append(i)
 
         new_children = List.empty_list(numba.int32[:])
         new_parents = List.empty_list(numba.int32[:])
@@ -402,12 +407,19 @@ def run(n, r, d):
     # print(graph.paths.random)
     # print(graph.paths.greedy)
 
-    # graph.plot_nodes()
-    # for i in ["longest", "shortest", "random", "greedy"]:
-    #     path = graph.path_positions(i)
-    #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    # plt.legend()
-    # plt.show()
+    # g = nx.DiGraph()
+    # g.add_nodes_from(range(n))
+    # g.add_edges_from(graph.edges)
+    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+    # plt.savefig("network")
+    # plt.clf()
+
+    graph.plot_nodes()
+    for i in ["longest", "shortest", "random", "greedy"]:
+        path = graph.path_positions(i)
+        plt.plot(path[:, 1], path[:, 0], "o", label=i)
+    plt.legend()
+    plt.savefig("graph")
 
     return graph.pickle()
 
