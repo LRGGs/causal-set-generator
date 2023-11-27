@@ -1,18 +1,30 @@
 import multiprocessing
+import pickle
 import random
 import time
 from dataclasses import dataclass
-import pickle
 
 import matplotlib
 import matplotlib.pyplot as plt
+import networkx as nx
 import numba.np.arraymath
 import numpy as np
-import networkx as nx
 from numba import njit
 from numba.typed import List
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
+
+
+class bcolors:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 @dataclass
@@ -68,7 +80,7 @@ class Graph:
         self.paths = Paths([], [], [], [])
         self.connected_interval = []
 
-    def configure_graph(self):
+    def configure_graph(self, timing=False):
         a = time.time()
         self.generate_nodes()
         b = time.time()
@@ -78,12 +90,13 @@ class Graph:
         d = time.time()
         self.find_valid_interval()
         e = time.time()
-        # print(f"gen nodes: {b-a}")
-        # print(f"make edges: {c-b}")
-        # print(f"find order: {d-c}")
-        # print(f"find interval: {e-d}")
+        if timing:
+            print(f"gen nodes: {b-a}")
+            print(f"make edges: {c-b}")
+            print(f"find order: {d-c}")
+            print(f"find interval: {e-d}")
 
-    def find_paths(self):
+    def find_paths(self, timing=False):
         a = time.time()
         self.longest_path()
         b = time.time()
@@ -93,10 +106,11 @@ class Graph:
         d = time.time()
         self.greedy_path()
         e = time.time()
-        # print(f"longest: {b-a}")
-        # print(f"shortest: {c-b}")
-        # print(f"random: {d-c}")
-        # print(f"greedy: {e-d}")
+        if timing:
+            print(f"longest: {b-a}")
+            print(f"shortest: {c-b}")
+            print(f"random: {d-c}")
+            print(f"greedy: {e-d}")
 
     @property
     def node_x_positions(self):
@@ -129,7 +143,9 @@ class Graph:
         and are time-like separated
         """
         a = time.time()
-        self.edges, children, parents = self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric)
+        self.edges, children, parents = self.numba_edges(
+            self.numba_nodes, self.radius, self.minkowski_metric
+        )
         b = time.time()
         children = list(children)
         parents = list(parents)
@@ -153,8 +169,8 @@ class Graph:
         for i in range(len(nodes)):
             node1 = nodes[i]
             tmax = 0.5 * (1 + r + node1[0] - node1[1])
-            l1 = (r + node1[0] - node1[1])
-            l2 = (r + node1[0] + node1[1])
+            l1 = r + node1[0] - node1[1]
+            l2 = r + node1[0] + node1[1]
             for j in range(i + 1, n):
                 node2 = nodes[j]
                 if node2[0] > tmax:
@@ -372,15 +388,17 @@ class Graph:
         plt.plot(self.node_x_positions, self.node_t_positions, "g,")
 
     def weight_collections(self):
-        tot_orders = [self.order[i].depth + self.order[i].height
-                     for i in self.connected_interval]
+        tot_orders = [
+            self.order[i].depth + self.order[i].height for i in self.connected_interval
+        ]
         max_ord = max(tot_orders)
         tot_orders = np.array(tot_orders)
         weights = max_ord - tot_orders
         max_weight, min_weight = max(weights), min(weights)
 
-        all_posses = np.array([self.nodes[node].position
-                               for node in self.connected_interval])
+        all_posses = np.array(
+            [self.nodes[node].position for node in self.connected_interval]
+        )
         collections = []
         for weight in range(min_weight, max_weight):
             collections.append(all_posses[weights == weight])
@@ -396,46 +414,47 @@ class Graph:
         }
 
 
-def run(n, r, d, i=0):
-    print(f"{i}: starting")
+def run(n, r, d, i, p, g, m):
     graph = Graph(n, r, d)
-    print(f"{i}: graph initialised")
+    print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED")
     graph.configure_graph()
-    print(f"{i}: graph configured")
+    print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED")
     graph.find_paths()
-    print(f"{i}: paths found")
+    print(f"{bcolors.OKGREEN} Graph {i}: PATHED")
 
-    # print(graph.paths.longest)
-    # print(graph.paths.shortest)
-    # print(graph.paths.random)
-    # print(graph.paths.greedy)
+    if p:
+        print(graph.paths.longest)
+        print(graph.paths.shortest)
+        print(graph.paths.random)
+        print(graph.paths.greedy)
 
-    # g = nx.DiGraph()
-    # g.add_nodes_from(range(n))
-    # g.add_edges_from(graph.edges)
-    # nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
-    # plt.savefig("network")
-    # plt.clf()
+    if g:
+        g = nx.DiGraph()
+        g.add_nodes_from(range(n))
+        g.add_edges_from(graph.edges)
+        nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+        plt.savefig("../images/network")
+        plt.clf()
 
-    # graph.plot_nodes()
-    # for i in ["longest", "shortest", "random", "greedy"]:
-    #     path = graph.path_positions(i)
-    #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    # plt.legend()
-    # plt.savefig("graph")
+    if m:
+        graph.plot_nodes()
+        for i in ["longest", "shortest", "random", "greedy"]:
+            path = graph.path_positions(i)
+            plt.plot(path[:, 1], path[:, 0], "o", label=i)
+        plt.legend()
+        plt.savefig("../im/graph")
 
     return graph.results()
 
 
 def multi_run(n, r, d, iters):
     cpus = multiprocessing.cpu_count() - 1
-    p = multiprocessing.Pool(processes=8)
-
-    inputs = [
-        [n, r, d, i] for i in range(iters)
-    ]
+    p = multiprocessing.Pool(processes=cpus)
+    inputs = [[n, r, d, i, False, False, False] for i in range(iters)]
     result = p.starmap(run, inputs)
-    with open(f"../results/N-{n}__R-{r}__D-{d}__I-{iters}", 'wb') as fp:
+    with open(
+        f"../results/N-{n}__R-{str(r).replace('.', '-')}__D-{d}__I-{iters}", "wb"
+    ) as fp:
         pickle.dump(result, fp)
 
 
@@ -449,8 +468,7 @@ if __name__ == "__main__":
     # run()
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-
     # cProfile.run("run(10000, 0.3, 2)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    multi_run(10000, 0.3, 2, 100)
+    multi_run(5000, 0.5, 2, 100)

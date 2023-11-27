@@ -5,7 +5,7 @@ __pycache__/
 
 # raw data
 data/
-
+results/
 # C extensions
 *.so
 
