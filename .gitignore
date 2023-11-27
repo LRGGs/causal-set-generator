@@ -6,6 +6,8 @@ __pycache__/
 # raw data
 data/
 results/
+images/
+
 # C extensions
 *.so
 

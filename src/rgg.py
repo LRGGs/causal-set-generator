@@ -442,7 +442,7 @@ def run(n, r, d, i, p, g, m):
             path = graph.path_positions(i)
             plt.plot(path[:, 1], path[:, 0], "o", label=i)
         plt.legend()
-        plt.savefig("../im/graph")
+        plt.savefig("../images/graph")
 
     return graph.results()
 
@@ -471,4 +471,4 @@ if __name__ == "__main__":
     # cProfile.run("run(10000, 0.3, 2)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    multi_run(5000, 0.5, 2, 100)
+    multi_run(500, 0.5, 2, 10)
