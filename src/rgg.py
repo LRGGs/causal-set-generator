@@ -78,10 +78,10 @@ class Graph:
         d = time.time()
         self.find_valid_interval()
         e = time.time()
-        print(f"gen nodes: {b-a}")
-        print(f"make edges: {c-b}")
-        print(f"find order: {d-c}")
-        print(f"find interval: {e-d}")
+        # print(f"gen nodes: {b-a}")
+        # print(f"make edges: {c-b}")
+        # print(f"find order: {d-c}")
+        # print(f"find interval: {e-d}")
 
     def find_paths(self):
         a = time.time()
@@ -93,10 +93,10 @@ class Graph:
         d = time.time()
         self.greedy_path()
         e = time.time()
-        print(f"longest: {b-a}")
-        print(f"shortest: {c-b}")
-        print(f"random: {d-c}")
-        print(f"greedy: {e-d}")
+        # print(f"longest: {b-a}")
+        # print(f"shortest: {c-b}")
+        # print(f"random: {d-c}")
+        # print(f"greedy: {e-d}")
 
     @property
     def node_x_positions(self):
@@ -136,8 +136,8 @@ class Graph:
         for i in range(len(children)):
             self.relatives.append(Relatives(i, list(children[i]), list(parents[i])))
         c = time.time()
-        print(f"numba: {b-a}")
-        print(f"loop: {c-b}")
+        # print(f"numba: {b-a}")
+        # print(f"loop: {c-b}")
 
     @staticmethod
     @njit()
@@ -387,20 +387,23 @@ class Graph:
 
         return collections
 
-    def pickle(self):
-        info = {
+    def results(self):
+        return {
             "nodes": self.nodes,
             "order": self.order,
             "order_collections": self.weight_collections(),
             "paths": self.paths,
         }
-        return pickle.dumps(info)
 
 
-def run(n, r, d):
+def run(n, r, d, i=0):
+    print(f"{i}: starting")
     graph = Graph(n, r, d)
+    print(f"{i}: graph initialised")
     graph.configure_graph()
+    print(f"{i}: graph configured")
     graph.find_paths()
+    print(f"{i}: paths found")
 
     # print(graph.paths.longest)
     # print(graph.paths.shortest)
@@ -414,26 +417,26 @@ def run(n, r, d):
     # plt.savefig("network")
     # plt.clf()
 
-    graph.plot_nodes()
-    for i in ["longest", "shortest", "random", "greedy"]:
-        path = graph.path_positions(i)
-        plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    plt.legend()
-    plt.savefig("graph")
+    # graph.plot_nodes()
+    # for i in ["longest", "shortest", "random", "greedy"]:
+    #     path = graph.path_positions(i)
+    #     plt.plot(path[:, 1], path[:, 0], "o", label=i)
+    # plt.legend()
+    # plt.savefig("graph")
 
-    return graph.pickle()
+    return graph.results()
 
 
 def multi_run(n, r, d, iters):
     cpus = multiprocessing.cpu_count() - 1
-    p = multiprocessing.Pool(processes=cpus)
+    p = multiprocessing.Pool(processes=8)
 
     inputs = [
-        [n, r, d] for _ in range(iters)
+        [n, r, d, i] for i in range(iters)
     ]
     result = p.starmap(run, inputs)
-    # for res in result:
-    #     print(pickle.loads(res)["paths"].longest)
+    with open(f"../results/N-{n}__R-{r}__D-{d}__I-{iters}", 'wb') as fp:
+        pickle.dump(result, fp)
 
 
 if __name__ == "__main__":
@@ -443,11 +446,11 @@ if __name__ == "__main__":
 
     # pr = cProfile.Profile()
     # pr.enable()
-
     # run()
-
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
 
-    cProfile.run("run(10000, 0.3, 2)", "profiler")
-    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    # cProfile.run("run(10000, 0.3, 2)", "profiler")
+    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+
+    multi_run(10000, 0.3, 2, 100)
