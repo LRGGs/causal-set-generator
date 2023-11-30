@@ -29,10 +29,28 @@ def mean_distance_by_order(order_collections, orders=10):
     plt.show()
 
 
-def mean_distance_by_path(graphs, orders=10):
-    pass
+def mean_distance_by_path(graphs):
+    path_names = ["longest", "greedy", "random", "shortest"]
+    total_seps = []
+    for graph in graphs:
+        paths = []
+        for name in path_names:
+            path = getattr(graph["paths"], name)
+            paths.append(set(list(sum(path, ()))))
+        mean_seps = []
+        for path in paths:
+            mean_seps.append(np.sqrt(np.mean([graph["nodes"][node].position[1]**2 for node in path])))
+        total_seps.append(mean_seps)
+    means = np.mean(total_seps, axis=0)
+    stdvs = np.std(total_seps, axis=0)
+    plt.errorbar([i for i in path_names], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+    plt.title(f"Mean Separation from Geodesic for Each Path")
+    plt.xlabel("Path")
+    plt.ylabel("Mean Separation")
+    plt.show()
 
 
 if __name__ == '__main__':
     graphs = read_pickle(10000, 1, 2, 100)
-    mean_distance_by_order([graph["order_collections"] for graph in graphs])
+    # mean_distance_by_order([graph["order_collections"] for graph in graphs])
+    mean_distance_by_path(graphs)
