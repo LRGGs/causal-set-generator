@@ -12,7 +12,7 @@ import numpy as np
 from numba import njit
 from numba.typed import List
 
-# matplotlib.use("TkAgg")
+matplotlib.use("TkAgg")
 
 
 class bcolors:
@@ -414,7 +414,7 @@ class Graph:
         }
 
 
-def run(n, r, d, i, p, g, m):
+def run(n, r, d, i, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED")
     graph.configure_graph()
@@ -468,7 +468,7 @@ if __name__ == "__main__":
     # run()
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-    # cProfile.run("run(10000, 0.3, 2)", "profiler")
-    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    cProfile.run("run(100, 1, 2, i=1, m=True, g=True)", "profiler")
+    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    multi_run(500, 0.5, 2, 10)
+    # multi_run(500, 0.5, 2, 10)
