@@ -22,11 +22,28 @@ def mean_distance_by_order(order_collections, orders=10):
             order_means.append(np.sqrt(np.mean([node[1]**2 for node in graph[i]])))
         means.append(order_means)
     total_means = np.mean(means, axis=0)
-    total_stdvs = np.std(means, axis=0)
+    total_stdvs = np.std(means, axis=0)/np.sqrt(len(means))
     plt.errorbar([i for i in range(orders)], total_means, yerr=total_stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Mean Separation from Geodesic for the First {orders} Orders")
     plt.xlabel("Order")
     plt.ylabel("Mean Separation")
+
+    plt.show()
+
+
+def max_distance_by_order(order_collections, orders=10):
+    means = []
+    for graph in order_collections:
+        order_means = []
+        for i in range(orders):
+            order_means.append(max([abs(node[1]) for node in graph[i]]))
+        means.append(order_means)
+    total_means = np.mean(means, axis=0)
+    total_stdvs = np.std(means, axis=0)/np.sqrt(len(means))
+    plt.errorbar([i for i in range(orders)], total_means, yerr=total_stdvs, ls='none', capsize=5, marker="x")
+    plt.title(f"Maximum Separation from Geodesic for the First {orders} Orders")
+    plt.xlabel("Order")
+    plt.ylabel("Maximum Separation")
 
     plt.show()
 
@@ -44,7 +61,7 @@ def mean_distance_by_path(graphs):
         total_seps.append(mean_seps)
     means = np.mean(total_seps, axis=0)
     stdvs = np.std(total_seps, axis=0)/np.sqrt(len(total_seps))
-    plt.errorbar([i for i in PATH_NAMES], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+    plt.errorbar(PATH_NAMES, means, yerr=stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Mean Separation from Geodesic for Each Path")
     plt.xlabel("Path")
     plt.ylabel("Mean Separation")
@@ -64,7 +81,7 @@ def greatest_distance_by_path(graphs):
         all_seps.append(largest_seps)
     means = np.mean(all_seps, axis=0)
     stdvs = np.std(all_seps, axis=0)/np.sqrt(len(all_seps))
-    plt.errorbar([i for i in PATH_NAMES], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+    plt.errorbar(PATH_NAMES, means, yerr=stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Largest Separation from Geodesic for Each Path")
     plt.xlabel("Path")
     plt.ylabel("largest Separation")
@@ -82,25 +99,31 @@ def angle_between(v1, v2):
 
 
 def mean_deviation_by_path(graphs):
-    total_devs = []
+    total_angs = []
+    j = -1
     for graph in graphs:
+        j += 1
         paths = []
-        for name in PATH_NAMES:
-            if name != "shortest":
-                path = getattr(graph["paths"], name)
-                paths.append(list(set(list(sum(path, ()))[1:-1])))
+        for name in PATH_NAMES[:-1]:
+            path = getattr(graph["paths"], name)
+            paths.append(set(list(sum(path, ()))[1:-1]))
+        mean_angs = []
         for path in paths:
-            devs = []
-            for n, j in zip(path[:-1], path[1:]):
-                v1 = graph["nodes"][j].position
-                v2 = graph["nodes"][n].position
-                dev = angle_between(v1, v2)
-                devs.append(dev)
-            mean = np.mean(devs)
-            total_devs.append([mean])
-    means = np.mean(total_devs, axis=0)
-    stdvs = np.std(total_devs, axis=0)/np.sqrt(len(total_devs))
-    plt.errorbar([i for i in PATH_NAMES if i != "shortest"], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+            path = sorted(list(path))
+            angs = []
+            if len(path)-1 == 0:
+                print(path, print(j))
+            for i in range(len(path)-1):
+                v1 = graph["nodes"][path[i]].position
+                v2 = graph["nodes"][path[i+1]].position
+                if all(v1) == 0 or all(v2) == 0:
+                    print(path[i], path[i+1])
+                angs.append(angle_between(v1, v2))
+            mean_angs.append(np.sqrt(np.mean([ang ** 2 for ang in angs])))
+        total_angs.append(mean_angs)
+    means = np.mean(total_angs, axis=0)
+    stdvs = np.std(total_angs, axis=0) / np.sqrt(len(total_angs))
+    plt.errorbar(PATH_NAMES[:-1], means, yerr=stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Mean Angular Deviation for Each Path")
     plt.xlabel("Path")
     plt.ylabel("Mean Angular Deviation")
@@ -108,21 +131,25 @@ def mean_deviation_by_path(graphs):
 
 
 def greatest_deviation_by_path(graphs):
-    total_devs = []
+    total_angs = []
     for graph in graphs:
         paths = []
-        for name in PATH_NAMES:
-            if name != "shortest":
-                path = getattr(graph["paths"], name)
-                paths.append(set(list(sum(path, ()))[1:-1]))
+        for name in PATH_NAMES[:-1]:
+            path = getattr(graph["paths"], name)
+            paths.append(set(list(sum(path, ()))[1:-1]))
+        mean_angs = []
         for path in paths:
-            devs = []
-            for n, j in zip(list(path)[:-1], list(path)[1:]):
-                devs.append(angle_between(graph["nodes"][j].position, graph["nodes"][n].position))
-            total_devs.append(max(devs))
-    means = np.mean(total_devs, axis=0)
-    stdvs = np.std(total_devs, axis=0)/np.sqrt(len(total_devs))
-    plt.errorbar([i for i in PATH_NAMES if i != "shortest"], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+            path = sorted(list(path))
+            angs = []
+            for i in range(len(path)-1):
+                v1 = graph["nodes"][path[i]].position
+                v2 = graph["nodes"][path[i+1]].position
+                angs.append(angle_between(v1, v2))
+            mean_angs.append(max([abs(ang) for ang in angs]))
+        total_angs.append(mean_angs)
+    means = np.mean(total_angs, axis=0)
+    stdvs = np.std(total_angs, axis=0) / np.sqrt(len(total_angs))
+    plt.errorbar(PATH_NAMES[:-1], means, yerr=stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Max Angular Deviation for Each Path")
     plt.xlabel("Path")
     plt.ylabel("Max Angular Deviation")
@@ -130,8 +157,10 @@ def greatest_deviation_by_path(graphs):
 
 
 if __name__ == '__main__':
-    graphs = read_pickle(10000, 1, 2, 100)
-    # mean_distance_by_order([graph["order_collections"] for graph in graphs])
+    graphs = read_pickle(10000, 0.5, 2, 100)
+    order_collections = [graph["order_collections"] for graph in graphs]
+    mean_distance_by_order(order_collections, 50)
+    max_distance_by_order(order_collections, 50)
     mean_distance_by_path(graphs)
     greatest_distance_by_path(graphs)
     mean_deviation_by_path(graphs)

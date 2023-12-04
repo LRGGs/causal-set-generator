@@ -12,7 +12,7 @@ import numpy as np
 from numba import njit
 from numba.typed import List
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 
 class bcolors:
