@@ -147,3 +147,6 @@ dmypy.json
 __pycache__/*
 *.idea
 *.pytest_cache
+
+# Profile file
+/src/profiler

@@ -169,15 +169,16 @@ class Graph:
 
         for i in range(len(nodes)):
             node1 = nodes[i]
-            tmax = 0.5 * (1 + r + node1[0] - node1[1])
-            l1 = r + node1[0] - node1[1]
-            l2 = r + node1[0] + node1[1]
+            # tmax = max([0.5 * (1 + r + node1[0] - node1[1]),
+            #             0.5 * (1 + r + node1[0] + node1[1])])
+            # l1 = r + node1[0] - node1[1]
+            # l2 = r + node1[0] + node1[1]
             for j in range(i + 1, n):
                 node2 = nodes[j]
-                if node2[0] > tmax:
-                    break
-                if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
-                    continue
+                # if node2[0] > tmax:
+                #     break
+                # if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
+                #     continue
                 dx = node2 - node1
                 interval = dx @ metric @ dx
                 if -r2 < interval < 0:
@@ -362,11 +363,12 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             child_intervals = [
-                (int(child), self.interval((node.indx, int(child))))
+                (int(child), -self.interval((node.indx, int(child))))
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
             ]
-            next_node = max(child_intervals, key=lambda l: l[1])[0]
+            print(child_intervals)
+            next_node = min(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.greedy = path
@@ -464,12 +466,14 @@ if __name__ == "__main__":
     import io
     import pstats
 
+    plt.style.use("ggplot")
+
     # pr = cProfile.Profile()
     # pr.enable()
     # run()
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-    cProfile.run("run(100, 1, 2, i=1, m=True, g=True)", "profiler")
-    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    cProfile.run("run(1000, 0.5, 2, i=1, p=True, m=True, g=False)", "profiler")
+    #pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
     # multi_run(500, 0.5, 2, 10)
