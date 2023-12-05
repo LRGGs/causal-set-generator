@@ -183,5 +183,5 @@ if __name__ == "__main__":
     net1.plot_nodes()
     plt.show()
 
-    filename = "profile.prof"  # You can change this if needed
+    filename = "../profile.prof"  # You can change this if needed
     pr.dump_stats(filename)

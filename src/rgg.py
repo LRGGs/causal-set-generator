@@ -1,17 +1,30 @@
 import multiprocessing
+import pickle
 import random
 import time
 from dataclasses import dataclass
-import pickle
 
 import matplotlib
 import matplotlib.pyplot as plt
+import networkx as nx
 import numba.np.arraymath
 import numpy as np
 from numba import njit
 from numba.typed import List
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
+
+
+class bcolors:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 
@@ -30,6 +43,7 @@ class Order:
 
 @dataclass
 class Relatives:
+    node: int
     children: list
     parents: list
 
@@ -57,7 +71,7 @@ class Graph:
         self.d = d
         self.radius = radius
         self.edges = []
-        self.relatives = Relatives([], [])
+        self.relatives = []
         self.nodes = []
         self.numba_nodes = List()
         self.order = [Order(node, 0, 0) for node in range(self.n)]
@@ -67,17 +81,37 @@ class Graph:
         self.paths = Paths([], [], [], [])
         self.connected_interval = []
 
-    def configure_graph(self):
+    def configure_graph(self, timing=False):
+        a = time.time()
         self.generate_nodes()
+        b = time.time()
         self.make_edges_minkowski_numba()
+        c = time.time()
         self.find_order()
+        d = time.time()
         self.find_valid_interval()
+        e = time.time()
+        if timing:
+            print(f"gen nodes: {b-a}")
+            print(f"make edges: {c-b}")
+            print(f"find order: {d-c}")
+            print(f"find interval: {e-d}")
 
-    def find_paths(self):
+    def find_paths(self, timing=False):
+        a = time.time()
         self.longest_path()
+        b = time.time()
         self.shortest_path()
+        c = time.time()
         self.random_path()
+        d = time.time()
         self.greedy_path()
+        e = time.time()
+        if timing:
+            print(f"longest: {b-a}")
+            print(f"shortest: {c-b}")
+            print(f"random: {d-c}")
+            print(f"greedy: {e-d}")
 
     @property
     def node_x_positions(self):
@@ -88,6 +122,7 @@ class Graph:
         return [node.position[0] for node in self.nodes]
 
     def generate_nodes(self):
+        # np.random.seed(1)
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
         rotation_mat = np.array([[1, 1], [-1, 1]])
         positions.append(np.array([0, 0]))
@@ -109,10 +144,17 @@ class Graph:
         and are time-like separated
         """
         a = time.time()
-        self.edges, children, parents = self.numba_edges(self.numba_nodes, self.radius, self.minkowski_metric)
-        self.relatives.children = list(children)
-        self.relatives.parents = list(parents)
-        print(time.time() - a)
+        self.edges, children, parents = self.numba_edges(
+            self.numba_nodes, self.radius, self.minkowski_metric
+        )
+        b = time.time()
+        children = list(children)
+        parents = list(parents)
+        for i in range(len(children)):
+            self.relatives.append(Relatives(i, list(children[i]), list(parents[i])))
+        c = time.time()
+        # print(f"numba: {b-a}")
+        # print(f"loop: {c-b}")
 
     @staticmethod
     @njit()
@@ -125,42 +167,36 @@ class Graph:
         parents = List()
         [parents.append(List.empty_list(numba.int64)) for _ in range(n)]
 
-        for i in range(n):
+        for i in range(len(nodes)):
             node1 = nodes[i]
             tmax = 0.5 * (1 + r + node1[0] - node1[1])
-            l1 = (r + node1[0] - node1[1])
-            l2 = (r + node1[0] + node1[1])
+            l1 = r + node1[0] - node1[1]
+            l2 = r + node1[0] + node1[1]
             for j in range(i + 1, n):
                 node2 = nodes[j]
                 if node2[0] > tmax:
                     break
                 if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
                     continue
-                pos1 = node1
-                pos2 = node2
-                dx = pos2 - pos1
+                dx = node2 - node1
                 interval = dx @ metric @ dx
                 if -r2 < interval < 0:
                     edges.append([i, j])
                     children[i].append(j)
                     parents[j].append(i)
 
-        new_children = List.empty_list(numba.int64[:])
-        new_parents = List.empty_list(numba.int64[:])
+        new_children = List.empty_list(numba.int32[:])
+        new_parents = List.empty_list(numba.int32[:])
 
         for i in range(n):
-            kids = children[i]
-            kidz = len(kids)
-            a = np.zeros(kidz, dtype=np.int64)
-            for j in range(kidz):
-                a[j] = kids[j]
+            a = np.zeros(len(children[i]), dtype=np.int32)
+            for j in range(len(children[i])):
+                a[j] = children[i][j]
             new_children.append(a)
 
-            pars = parents[i]
-            parz = len(pars)
-            a = np.zeros(parz, dtype=np.int64)
-            for j in range(parz):
-                a[j] = pars[j]
+            a = np.zeros(len(parents[i]), dtype=np.int32)
+            for j in range(len(parents[i])):
+                a[j] = parents[i][j]
             new_parents.append(a)
 
         return edges, new_children, new_parents
@@ -177,7 +213,6 @@ class Graph:
             if order.height != 0 and order.depth != 0:
                 self.connected_interval.append(node.indx)
         self.connected_interval.append(self.nodes[-1].indx)
-
 
     def interval(self, node_pair):
         """
@@ -234,7 +269,7 @@ class Graph:
         direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
-        for relative in getattr(self.relatives, direction)[node]:
+        for relative in getattr(self.relatives[node], direction):
             relative = int(relative)
             if not vis[relative]:
                 self.direction_first_search(relative, vis, direction)
@@ -262,10 +297,10 @@ class Graph:
         while node != self.nodes[-1]:
             current_depth = self.order[node.indx].depth
             valid_children = [
-                child
-                for child in self.relatives.children[node.indx]
-                if child in self.connected_interval
-                and self.order[child].depth == current_depth - 1
+                int(child)
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
+                and self.order[int(child)].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -283,9 +318,9 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             children = [
-                child
-                for child in self.relatives.children[node.indx]
-                if child in self.connected_interval
+                int(child)
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
             ]
             min_depth = min([self.order[child].depth for child in children])
             valid_children = [
@@ -307,9 +342,9 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             valid_children = [
-                child
-                for child in self.relatives.children[node.indx]
-                if child in self.connected_interval
+                int(child)
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -327,9 +362,9 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             child_intervals = [
-                (child, self.interval((node.indx, child)))
-                for child in self.relatives.children[node.indx]
-                if child in self.connected_interval
+                (int(child), self.interval((node.indx, int(child))))
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
             ]
             next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
@@ -354,61 +389,74 @@ class Graph:
         plt.plot(self.node_x_positions, self.node_t_positions, "g,")
 
     def weight_collections(self):
-        tot_orders = [self.order[i].depth + self.order[i].height
-                     for i in self.connected_interval]
+        tot_orders = [
+            self.order[i].depth + self.order[i].height for i in self.connected_interval
+        ]
         max_ord = max(tot_orders)
         tot_orders = np.array(tot_orders)
         weights = max_ord - tot_orders
         max_weight, min_weight = max(weights), min(weights)
 
-        all_posses = np.array([self.nodes[node].position
-                               for node in self.connected_interval])
+        all_posses = np.array(
+            [self.nodes[node].position for node in self.connected_interval]
+        )
         collections = []
         for weight in range(min_weight, max_weight):
             collections.append(all_posses[weights == weight])
 
         return collections
 
-    def pickle(self):
-        info = {
+    def results(self):
+        return {
             "nodes": self.nodes,
             "order": self.order,
-            "order_collections": self.order_collections(),
+            "order_collections": self.weight_collections(),
             "paths": self.paths,
         }
-        return pickle.dumps(info)
 
 
-def run(n, r, d):
+def run(n, r, d, i, p=False, g=False, m=False):
     graph = Graph(n, r, d)
+    print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED")
     graph.configure_graph()
+    print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED")
     graph.find_paths()
+    print(f"{bcolors.OKGREEN} Graph {i}: PATHED")
 
-    # print(graph.paths.longest)
-    # print(graph.paths.shortest)
-    # print(graph.paths.random)
-    # print(graph.paths.greedy)
+    if p:
+        print(graph.paths.longest)
+        print(graph.paths.shortest)
+        print(graph.paths.random)
+        print(graph.paths.greedy)
 
-    graph.plot_nodes()
-    for i in ["longest", "shortest", "random", "greedy"]:
-        path = graph.path_positions(i)
-        plt.plot(path[:, 1], path[:, 0], "o", label=i)
-    plt.legend()
-    plt.show()
+    if g:
+        g = nx.DiGraph()
+        g.add_nodes_from(range(n))
+        g.add_edges_from(graph.edges)
+        nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+        plt.savefig("../images/network")
+        plt.clf()
 
-    return graph.pickle()
+    if m:
+        graph.plot_nodes()
+        for i in ["longest", "shortest", "random", "greedy"]:
+            path = graph.path_positions(i)
+            plt.plot(path[:, 1], path[:, 0], "o", label=i)
+        plt.legend()
+        plt.savefig("../images/graph")
+
+    return graph.results()
 
 
 def multi_run(n, r, d, iters):
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
-
-    inputs = [
-        [n, r, d] for _ in range(iters)
-    ]
+    inputs = [[n, r, d, i, False, False, False] for i in range(iters)]
     result = p.starmap(run, inputs)
-    # for res in result:
-    #     print(pickle.loads(res)["paths"].longest)
+    with open(
+        f"../results/N-{n}__R-{str(r).replace('.', '-')}__D-{d}__I-{iters}", "wb"
+    ) as fp:
+        pickle.dump(result, fp)
 
 
 if __name__ == "__main__":
@@ -418,11 +466,10 @@ if __name__ == "__main__":
 
     # pr = cProfile.Profile()
     # pr.enable()
-
     # run()
-
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-
-    cProfile.run("run(10000, 0.3, 2)", "profiler")
+    cProfile.run("run(100, 1, 2, i=1, m=True, g=True)", "profiler")
     pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+
+    # multi_run(500, 0.5, 2, 10)
