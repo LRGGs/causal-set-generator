@@ -14,6 +14,7 @@ from numba.typed import List
 matplotlib.use("TkAgg")
 
 
+
 @dataclass
 class Node:
     indx: int
