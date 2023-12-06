@@ -487,12 +487,13 @@ def multi_run(n, r, d, iters):
         inputs = [list(i) for i in inputs]
     else:
         inputs = [[n, r, d, i, False, False, False] for i in range(iters)]
+
     result = p.starmap(run, inputs)
 
     with open(
-        f"../results/N-{n if not isinstance(n, list) else '-'.join(str(i) for i in n)}"
-        f"__R-{str(r if not isinstance(r, list) else '-'.join(str(i) for i in r)).replace('.', '-')}"
-        f"__D-{d if not isinstance(d, list) else '-'.join(str(i) for i in d)}"
+        f"../results/N-{n if not isinstance(n, list) else '('+str(min(n))+'-'+str(max(n))+')x'+str(len(n))}"
+        f"__R-{r if not isinstance(r, list) else ('('+str(min(r))+'-'+str(max(r))+')x'+str(len(r))).replace('.', '-')}"
+        f"__D-{d if not isinstance(d, list) else '('+str(min(d))+'-'+str(max(d))+')x'+str(len(d))}"
         f"__I-{iters}.pkl",
         "wb",
     ) as fp:
@@ -514,4 +515,4 @@ if __name__ == "__main__":
     # cProfile.run("run(1000, 10, 2, i=1, p=True, m=True, g=False)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 10)
+    multi_run(list(np.linspace(10, 100, 5, dtype=int)), 0.5, 2, 10)
