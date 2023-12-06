@@ -2,6 +2,7 @@ import multiprocessing
 import pickle
 import random
 import time
+from itertools import product
 from dataclasses import dataclass
 
 import matplotlib
@@ -27,11 +28,13 @@ class bcolors:
     UNDERLINE = "\033[4m"
 
 
-
 @dataclass
 class Node:
     indx: int
     position: np.ndarray
+
+    def to_dict(self):
+        return {"node": self.indx, "position": self.position}
 
 
 @dataclass
@@ -40,12 +43,18 @@ class Order:
     height: int
     depth: int
 
+    def to_dict(self):
+        return {"node": self.node, "height": self.height, "depth": self.depth}
+
 
 @dataclass
 class Relatives:
     node: int
     children: list
     parents: list
+
+    def to_dict(self):
+        return {"node": self.node, "children": self.children, "parents": self.parents}
 
 
 @dataclass
@@ -54,6 +63,14 @@ class Paths:
     greedy: list
     random: list
     shortest: list
+
+    def to_dict(self):
+        return {
+            "longest": self.longest,
+            "children": self.greedy,
+            "parents": self.random,
+            "shortest": self.shortest,
+        }
 
 
 class Graph:
@@ -74,7 +91,7 @@ class Graph:
         self.relatives = []
         self.nodes = []
         self.numba_nodes = List()
-        self.order = [Order(node, 0, 0) for node in range(self.n)]
+        self.orders = [Order(node, 0, 0) for node in range(self.n)]
         identity = np.identity(n=self.d, dtype=np.float32)
         identity[0][0] *= -1
         self.minkowski_metric = identity
@@ -169,8 +186,12 @@ class Graph:
 
         for i in range(len(nodes)):
             node1 = nodes[i]
-            tmax = max([0.5 * (1 + r + node1[0] - node1[1]),
-                        0.5 * (1 + r + node1[0] + node1[1])])
+            tmax = max(
+                [
+                    0.5 * (1 + r + node1[0] - node1[1]),
+                    0.5 * (1 + r + node1[0] + node1[1]),
+                ]
+            )
             l1 = r + node1[0] - node1[1]
             l2 = r + node1[0] + node1[1]
             for j in range(i + 1, n):
@@ -210,7 +231,7 @@ class Graph:
 
         self.connected_interval.append(self.nodes[0].indx)
         for node in self.nodes:
-            order = self.order[node.indx]
+            order = self.orders[node.indx]
             if order.height != 0 and order.depth != 0:
                 self.connected_interval.append(node.indx)
         self.connected_interval.append(self.nodes[-1].indx)
@@ -275,13 +296,15 @@ class Graph:
             if not vis[relative]:
                 self.direction_first_search(relative, vis, direction)
 
-            current_order = getattr(self.order[node], direction_to_order_map[direction])
+            current_order = getattr(
+                self.orders[node], direction_to_order_map[direction]
+            )
             relative_order = getattr(
-                self.order[relative], direction_to_order_map[direction]
+                self.orders[relative], direction_to_order_map[direction]
             )
 
             setattr(
-                self.order[node],
+                self.orders[node],
                 direction_to_order_map[direction],
                 max([current_order, relative_order + 1]),
             )
@@ -296,12 +319,12 @@ class Graph:
         path = []
         node = self.nodes[0]
         while node != self.nodes[-1]:
-            current_depth = self.order[node.indx].depth
+            current_depth = self.orders[node.indx].depth
             valid_children = [
                 int(child)
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
-                and self.order[int(child)].depth == current_depth - 1
+                and self.orders[int(child)].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -323,9 +346,9 @@ class Graph:
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
             ]
-            min_depth = min([self.order[child].depth for child in children])
+            min_depth = min([self.orders[child].depth for child in children])
             valid_children = [
-                child for child in children if self.order[child].depth == min_depth
+                child for child in children if self.orders[child].depth == min_depth
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -367,7 +390,6 @@ class Graph:
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
             ]
-            print(child_intervals)
             next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
@@ -392,7 +414,8 @@ class Graph:
 
     def weight_collections(self):
         tot_orders = [
-            self.order[i].depth + self.order[i].height for i in self.connected_interval
+            self.orders[i].depth + self.orders[i].height
+            for i in self.connected_interval
         ]
         max_ord = max(tot_orders)
         tot_orders = np.array(tot_orders)
@@ -408,16 +431,17 @@ class Graph:
 
         return collections
 
-    def results(self):
+    def to_dict(self):
         return {
-            "nodes": self.nodes,
-            "order": self.order,
+            "nodes": [node.to_dict() for node in self.nodes],
+            "order": [order.to_dict() for order in self.orders],
             "order_collections": self.weight_collections(),
-            "paths": self.paths,
+            "paths": self.paths.to_dict(),
+            "interval": self.connected_interval,
         }
 
 
-def run(n, r, d, i, p=False, g=False, m=False):
+def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED")
     graph.configure_graph()
@@ -435,7 +459,9 @@ def run(n, r, d, i, p=False, g=False, m=False):
         g = nx.DiGraph()
         g.add_nodes_from(range(n))
         g.add_edges_from(graph.edges)
-        nx.draw(g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True)
+        nx.draw(
+            g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True
+        )
         plt.savefig("../images/network")
         plt.clf()
 
@@ -447,16 +473,28 @@ def run(n, r, d, i, p=False, g=False, m=False):
         plt.legend()
         plt.savefig("../images/graph")
 
-    return graph.results()
+    return graph.to_dict()
 
 
 def multi_run(n, r, d, iters):
-    cpus = multiprocessing.cpu_count() - 1
+    cpus = multiprocessing.cpu_count() - 2
     p = multiprocessing.Pool(processes=cpus)
-    inputs = [[n, r, d, i, False, False, False] for i in range(iters)]
+    variables = [n, r, d]
+    if any(isinstance(i, list) for i in variables):
+        iters = 1
+        variables = [[i] if not isinstance(i, list) else i for i in variables]
+        inputs = product(*variables)
+        inputs = [list(i) for i in inputs]
+    else:
+        inputs = [[n, r, d, i, False, False, False] for i in range(iters)]
     result = p.starmap(run, inputs)
+
     with open(
-        f"../results/N-{n}__R-{str(r).replace('.', '-')}__D-{d}__I-{iters}", "wb"
+        f"../results/N-{n if not isinstance(n, list) else '-'.join(str(i) for i in n)}"
+        f"__R-{str(r if not isinstance(r, list) else '-'.join(str(i) for i in r)).replace('.', '-')}"
+        f"__D-{d if not isinstance(d, list) else '-'.join(str(i) for i in d)}"
+        f"__I-{iters}.pkl",
+        "wb",
     ) as fp:
         pickle.dump(result, fp)
 
@@ -473,7 +511,7 @@ if __name__ == "__main__":
     # run()
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-    cProfile.run("run(1000, 10, 2, i=1, p=True, m=True, g=False)", "profiler")
-    #pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    # cProfile.run("run(1000, 10, 2, i=1, p=True, m=True, g=False)", "profiler")
+    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    # multi_run(500, 0.5, 2, 10)
+    multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 10)

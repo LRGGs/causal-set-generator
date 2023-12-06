@@ -8,6 +8,7 @@ data/
 results/
 images/
 results_zipped/
+src/profiler
 
 # C extensions
 *.so
