@@ -251,7 +251,7 @@ class Graph:
 
     def separation(self, node_pair):
         """
-        ds^2 between two nodes
+        Euclidean distance between two nodes
         Args:
             node_pair: the index of each node in a tuple
         """
