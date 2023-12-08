@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colored Boxes</title>
+        <script>
+        // Function to refresh the page every second
+        function autoRefresh() {
+            location.reload(true);
+        }
+
+        // Set up the interval for auto-refresh
+        setInterval(autoRefresh, 500);
+    </script>
+</head>
+<body>
+    <h1>Colored Boxes</h1>
+    <h2>Red: Not Started -- Yellow: Initialised -- Blue: Configured -- Green: Pathed</h2>
+    {% for box in boxes %}
+        <div style="width: 100px; height: 100px; background-color: {{ box.color }}; display: inline-block; margin: 10px;"></div>
+    {% endfor %}
+</body>
+</html>

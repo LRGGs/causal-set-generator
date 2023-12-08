@@ -4,6 +4,7 @@ import random
 import time
 from itertools import product
 from dataclasses import dataclass
+from src.logging.handler import update_status
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -457,10 +458,13 @@ class Graph:
 def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
+    update_status(i+1, "yellow")
     graph.configure_graph()
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
+    update_status(i+1, "blue")
     graph.find_paths()
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
+    update_status(i+1, "green")
 
     if p:
         print(graph.paths.longest)
@@ -531,9 +535,9 @@ if __name__ == "__main__":
     # run()
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-    cProfile.run("run(1000, 1, 2, i=1, p=True, m=True, g=False)", "profiler")
-    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    # cProfile.run("run(1000, 1, 2, i=1, p=True, m=True, g=False)", "profiler")
+    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    # multi_run(list(np.linspace(10, 100, 5, dtype=int)), 0.5, 2, 10)
-    # multi_run(10000, 0.5, 2, 100)
+    # multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 1)
+    multi_run(2000, 0.5, 2, 100)
 
