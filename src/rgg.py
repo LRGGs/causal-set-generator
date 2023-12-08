@@ -67,8 +67,8 @@ class Paths:
     def to_dict(self):
         return {
             "longest": self.longest,
-            "children": self.greedy,
-            "parents": self.random,
+            "greedy": self.greedy,
+            "random": self.random,
             "shortest": self.shortest,
         }
 
@@ -249,6 +249,19 @@ class Graph:
 
         return self.minkowski_metric @ dx @ dx
 
+    def separation(self, node_pair):
+        """
+        ds^2 between two nodes
+        Args:
+            node_pair: the index of each node in a tuple
+        """
+        pos0 = self.node_position(node_pair[0])
+        pos1 = self.node_position(node_pair[1])
+
+        dx = pos1 - pos0
+
+        return np.sqrt(dx @ dx)
+
     def proper_time(self, node_pair):
         return np.sqrt(-self.interval(node_pair))
 
@@ -386,11 +399,11 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             child_intervals = [
-                (int(child), -self.interval((node.indx, int(child))))
+                (int(child), self.separation((node.indx, int(child))))
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
             ]
-            next_node = max(child_intervals, key=lambda l: l[1])[0]
+            next_node = min(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.greedy = path
@@ -443,11 +456,11 @@ class Graph:
 
 def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
-    print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED")
+    print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
     graph.configure_graph()
-    print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED")
+    print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
     graph.find_paths()
-    print(f"{bcolors.OKGREEN} Graph {i}: PATHED")
+    print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
 
     if p:
         print(graph.paths.longest)
@@ -471,13 +484,22 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
             path = graph.path_positions(i)
             plt.plot(path[:, 1], path[:, 0], "o", label=i)
         plt.legend()
-        plt.savefig("../images/graph")
+        plt.show()
 
     return graph.to_dict()
 
 
+def file_namer(n, r, d, iters):
+    return (
+        f"../results/N-{n if not isinstance(n, list) else '('+str(min(n))+'-'+str(max(n))+')x'+str(len(n))}"
+        f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('('+str(min(r))+'-'+str(max(r))+')x'+str(len(r))).replace('.', '-')}"
+        f"__D-{d if not isinstance(d, list) else '('+str(min(d))+'-'+str(max(d))+')x'+str(len(d))}"
+        f"__I-{iters}.pkl"
+    )
+
+
 def multi_run(n, r, d, iters):
-    cpus = multiprocessing.cpu_count() - 2
+    cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
     variables = [n, r, d]
     if any(isinstance(i, list) for i in variables):
@@ -486,15 +508,12 @@ def multi_run(n, r, d, iters):
         inputs = product(*variables)
         inputs = [list(i) for i in inputs]
     else:
-        inputs = [[n, r, d, i, False, False, False] for i in range(iters)]
+        inputs = [[n, r, d, i] for i in range(iters)]
 
     result = p.starmap(run, inputs)
 
     with open(
-        f"../results/N-{n if not isinstance(n, list) else '('+str(min(n))+'-'+str(max(n))+')x'+str(len(n))}"
-        f"__R-{r if not isinstance(r, list) else ('('+str(min(r))+'-'+str(max(r))+')x'+str(len(r))).replace('.', '-')}"
-        f"__D-{d if not isinstance(d, list) else '('+str(min(d))+'-'+str(max(d))+')x'+str(len(d))}"
-        f"__I-{iters}.pkl",
+        file_namer(n, r, d, iters),
         "wb",
     ) as fp:
         pickle.dump(result, fp)
@@ -512,7 +531,9 @@ if __name__ == "__main__":
     # run()
     # filename = "profile.prof"  # You can change this if needed
     # pr.dump_stats(filename)
-    # cProfile.run("run(1000, 10, 2, i=1, p=True, m=True, g=False)", "profiler")
-    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
+    cProfile.run("run(1000, 1, 2, i=1, p=True, m=True, g=False)", "profiler")
+    pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    multi_run(list(np.linspace(10, 100, 5, dtype=int)), 0.5, 2, 10)
+    # multi_run(list(np.linspace(10, 100, 5, dtype=int)), 0.5, 2, 10)
+    # multi_run(10000, 0.5, 2, 100)
+

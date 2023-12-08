@@ -1,14 +1,16 @@
 import pickle
-from src.rgg import Node, Order, Paths
 import numpy as np
 import matplotlib.pyplot as plt
+
+from rgg import file_namer
+
 
 PATH_NAMES = ["longest", "greedy", "random", "shortest"]
 
 
 def read_pickle(n, r, d, i):
     with open(
-        f"../results/N-{n}__R-{str(r).replace('.', '-')}__D-{d}__I-{i}", "rb"
+        file_namer(n, r, d, i), "rb"
     ) as fp:
         file = pickle.load(fp)
         return file
@@ -53,11 +55,11 @@ def mean_distance_by_path(graphs):
     for graph in graphs:
         paths = []
         for name in PATH_NAMES:
-            path = getattr(graph["paths"], name)
+            path = graph["paths"].get(name)
             paths.append(set(list(sum(path, ()))[1:-1]))
         mean_seps = []
         for path in paths:
-            mean_seps.append(np.sqrt(np.mean([graph["nodes"][node].position[1]**2 for node in path])))
+            mean_seps.append(np.sqrt(np.mean([graph["nodes"][node]["position"][1]**2 for node in path])))
         total_seps.append(mean_seps)
     means = np.mean(total_seps, axis=0)
     stdvs = np.std(total_seps, axis=0)/np.sqrt(len(total_seps))
@@ -73,11 +75,11 @@ def greatest_distance_by_path(graphs):
     for graph in graphs:
         paths = []
         for name in PATH_NAMES:
-            path = getattr(graph["paths"], name)
+            path = graph["paths"].get(name)
             paths.append(set(list(sum(path, ()))[1:-1]))
         largest_seps = []
         for path in paths:
-            largest_seps.append(max([abs(graph["nodes"][node].position[1]) for node in path]))
+            largest_seps.append(max([abs(graph["nodes"][node]["position"][1]) for node in path]))
         all_seps.append(largest_seps)
     means = np.mean(all_seps, axis=0)
     stdvs = np.std(all_seps, axis=0)/np.sqrt(len(all_seps))
@@ -104,18 +106,18 @@ def mean_deviation_by_path(graphs):
     for graph in graphs:
         j += 1
         paths = []
-        for name in PATH_NAMES[:-1]:
-            path = getattr(graph["paths"], name)
-            paths.append(set(list(sum(path, ()))[1:-1]))
+        for name in PATH_NAMES:
+            path = graph["paths"].get(name)
+            paths.append(set(list(sum(path, ()))))
         mean_angs = []
         for path in paths:
             path = sorted(list(path))
             angs = []
             if len(path)-1 == 0:
                 print(path, print(j))
-            for i in range(len(path)-1):
-                v1 = graph["nodes"][path[i]].position
-                v2 = graph["nodes"][path[i+1]].position
+            for i in range(len(path)-2):
+                v1 = graph["nodes"][path[i+1]]["position"] - graph["nodes"][path[i]]["position"]
+                v2 = graph["nodes"][path[i+2]]["position"] - graph["nodes"][path[i+1]]["position"]
                 if all(v1) == 0 or all(v2) == 0:
                     print(path[i], path[i+1])
                 angs.append(angle_between(v1, v2))
@@ -123,7 +125,7 @@ def mean_deviation_by_path(graphs):
         total_angs.append(mean_angs)
     means = np.mean(total_angs, axis=0)
     stdvs = np.std(total_angs, axis=0) / np.sqrt(len(total_angs))
-    plt.errorbar(PATH_NAMES[:-1], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+    plt.errorbar(PATH_NAMES, means, yerr=stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Mean Angular Deviation for Each Path")
     plt.xlabel("Path")
     plt.ylabel("Mean Angular Deviation")
@@ -134,22 +136,22 @@ def greatest_deviation_by_path(graphs):
     total_angs = []
     for graph in graphs:
         paths = []
-        for name in PATH_NAMES[:-1]:
-            path = getattr(graph["paths"], name)
-            paths.append(set(list(sum(path, ()))[1:-1]))
+        for name in PATH_NAMES:
+            path = graph["paths"].get(name)
+            paths.append(set(list(sum(path, ()))))
         mean_angs = []
         for path in paths:
             path = sorted(list(path))
             angs = []
-            for i in range(len(path)-1):
-                v1 = graph["nodes"][path[i]].position
-                v2 = graph["nodes"][path[i+1]].position
+            for i in range(len(path)-2):
+                v1 = graph["nodes"][path[i+1]]["position"] - graph["nodes"][path[i]]["position"]
+                v2 = graph["nodes"][path[i+2]]["position"] - graph["nodes"][path[i+1]]["position"]
                 angs.append(angle_between(v1, v2))
             mean_angs.append(max([abs(ang) for ang in angs]))
         total_angs.append(mean_angs)
     means = np.mean(total_angs, axis=0)
     stdvs = np.std(total_angs, axis=0) / np.sqrt(len(total_angs))
-    plt.errorbar(PATH_NAMES[:-1], means, yerr=stdvs, ls='none', capsize=5, marker="x")
+    plt.errorbar(PATH_NAMES, means, yerr=stdvs, ls='none', capsize=5, marker="x")
     plt.title(f"Max Angular Deviation for Each Path")
     plt.xlabel("Path")
     plt.ylabel("Max Angular Deviation")
