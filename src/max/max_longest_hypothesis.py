@@ -1,6 +1,5 @@
 import matplotlib
 import matplotlib.pyplot as plt
-
 from max_graph import Network
 
 matplotlib.use("TkAgg")

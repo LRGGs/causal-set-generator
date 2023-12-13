@@ -2,9 +2,8 @@ import multiprocessing
 import pickle
 import random
 import time
-from itertools import product
 from dataclasses import dataclass
-from src.logging.handler import update_status
+from itertools import product
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -13,6 +12,8 @@ import numba.np.arraymath
 import numpy as np
 from numba import njit
 from numba.typed import List
+
+from src.mlogging.handler import update_status
 
 # matplotlib.use("TkAgg")
 
@@ -458,13 +459,13 @@ class Graph:
 def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
-    update_status(i+1, "yellow")
+    update_status(i + 1, "yellow")
     graph.configure_graph()
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
-    update_status(i+1, "blue")
+    update_status(i + 1, "blue")
     graph.find_paths()
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
-    update_status(i+1, "green")
+    update_status(i + 1, "green")
 
     if p:
         print(graph.paths.longest)
@@ -509,8 +510,8 @@ def multi_run(n, r, d, iters):
     if any(isinstance(i, list) for i in variables):
         iters = 1
         variables = [[i] if not isinstance(i, list) else i for i in variables]
-        inputs = product(*variables)
-        inputs = [list(i) for i in inputs]
+        variables = [list(i) for i in product(*variables)]
+        inputs = [[*j, i] for i, j in enumerate(variables)]
     else:
         inputs = [[n, r, d, i] for i in range(iters)]
 
@@ -523,12 +524,12 @@ def multi_run(n, r, d, iters):
         pickle.dump(result, fp)
 
 
-if __name__ == "__main__":
+def main():
     import cProfile
     import io
     import pstats
 
-    plt.style.use("ggplot")
+    # plt.style.use("ggplot")
 
     # pr = cProfile.Profile()
     # pr.enable()
@@ -538,6 +539,9 @@ if __name__ == "__main__":
     # cProfile.run("run(1000, 1, 2, i=1, p=True, m=True, g=False)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    # multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 1)
-    multi_run(2000, 0.5, 2, 100)
+    multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 1)
+    # multi_run(2000, 0.5, 2, 100)
 
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,9 @@
 import cython
+
 cimport numpy as cnp
+
 import numpy as np
+
 
 cdef list relatives(p, metric, n, r2):
     cdef int n
