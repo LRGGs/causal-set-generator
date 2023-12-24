@@ -1,17 +1,6 @@
-import pickle
-
 import matplotlib.pyplot as plt
 import numpy as np
-
-from rgg import file_namer
-
-PATH_NAMES = ["longest", "greedy", "random", "shortest"]
-
-
-def read_pickle(n, r, d, i):
-    with open(file_namer(n, r, d, i), "rb") as fp:
-        file = pickle.load(fp)
-        return file
+from src.analysis.utils import PATH_NAMES, read_pickle
 
 
 def mean_distance_by_order(order_collections, orders=10):
