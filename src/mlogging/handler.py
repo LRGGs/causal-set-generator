@@ -39,4 +39,3 @@ def update_status(box_index, new_color):
 
     if response.status_code != 200:
         print(f"Failed to change color. Status code: {response.status_code}")
-        print(response.json())

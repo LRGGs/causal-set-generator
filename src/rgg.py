@@ -4,6 +4,8 @@ import random
 import time
 from dataclasses import dataclass
 from itertools import product
+from os import getcwd
+import re
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,6 +16,7 @@ from numba import njit
 from numba.typed import List
 
 from src.mlogging.handler import update_status
+
 
 # matplotlib.use("TkAgg")
 
@@ -111,10 +114,10 @@ class Graph:
         self.find_valid_interval()
         e = time.time()
         if timing:
-            print(f"gen nodes: {b-a}")
-            print(f"make edges: {c-b}")
-            print(f"find order: {d-c}")
-            print(f"find interval: {e-d}")
+            print(f"gen nodes: {b - a}")
+            print(f"make edges: {c - b}")
+            print(f"find order: {d - c}")
+            print(f"find interval: {e - d}")
 
     def find_paths(self, timing=False):
         a = time.time()
@@ -127,10 +130,10 @@ class Graph:
         self.greedy_path()
         e = time.time()
         if timing:
-            print(f"longest: {b-a}")
-            print(f"shortest: {c-b}")
-            print(f"random: {d-c}")
-            print(f"greedy: {e-d}")
+            print(f"longest: {b - a}")
+            print(f"shortest: {c - b}")
+            print(f"random: {d - c}")
+            print(f"greedy: {e - d}")
 
     @property
     def node_x_positions(self):
@@ -339,7 +342,7 @@ class Graph:
                 int(child)
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
-                and self.orders[int(child)].depth == current_depth - 1
+                   and self.orders[int(child)].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -495,10 +498,12 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
 
 
 def file_namer(n, r, d, iters):
+    i = getcwd().split("src")[1].count("/") + 1
+
     return (
-        f"../results/N-{n if not isinstance(n, list) else '('+str(min(n))+'-'+str(max(n))+')x'+str(len(n))}"
-        f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('('+str(min(r))+'-'+str(max(r))+')x'+str(len(r))).replace('.', '-')}"
-        f"__D-{d if not isinstance(d, list) else '('+str(min(d))+'-'+str(max(d))+')x'+str(len(d))}"
+        f"{'../' * i}results/N-{n if not isinstance(n, list) else '(' + str(min(n)) + '-' + str(max(n)) + ')x' + str(len(n))}"
+        f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('(' + str(min(r)) + '-' + str(max(r)) + ')x' + str(len(r))).replace('.', '-')}"
+        f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
         f"__I-{iters}.pkl"
     )
 
@@ -518,29 +523,21 @@ def multi_run(n, r, d, iters):
     result = p.starmap(run, inputs)
 
     with open(
-        file_namer(n, r, d, iters),
-        "wb",
+            file_namer(n, r, d, iters),
+            "wb",
     ) as fp:
         pickle.dump(result, fp)
 
 
 def main():
-    import cProfile
-    import io
-    import pstats
-
-    # plt.style.use("ggplot")
-
-    # pr = cProfile.Profile()
-    # pr.enable()
-    # run()
-    # filename = "profile.prof"  # You can change this if needed
-    # pr.dump_stats(filename)
-    # cProfile.run("run(1000, 1, 2, i=1, p=True, m=True, g=False)", "profiler")
+    # import cProfile
+    # import pstats
+    # cProfile.run("run(20, 1, 2, i=1, p=False, m=False, g=False)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
     multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 1)
-    # multi_run(2000, 0.5, 2, 100)
+
+    # multi_run(20, 0.5, 2, 10)
 
 
 if __name__ == "__main__":
