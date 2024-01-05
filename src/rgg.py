@@ -2,12 +2,9 @@ import multiprocessing
 import pickle
 import random
 import time
-from dataclasses import dataclass
 from itertools import product
-from os import getcwd
-import re
 
-import matplotlib
+# import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
 import numba.np.arraymath
@@ -16,73 +13,17 @@ from numba import njit
 from numba.typed import List
 
 from src.mlogging.handler import update_status
-
+from src.utils import (Node, Order, Paths, Relatives, bcolors, file_namer,
+                       nrange)
 
 # matplotlib.use("TkAgg")
-
-
-class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-
-@dataclass
-class Node:
-    indx: int
-    position: np.ndarray
-
-    def to_dict(self):
-        return {"node": self.indx, "position": self.position}
-
-
-@dataclass
-class Order:
-    node: int
-    height: int
-    depth: int
-
-    def to_dict(self):
-        return {"node": self.node, "height": self.height, "depth": self.depth}
-
-
-@dataclass
-class Relatives:
-    node: int
-    children: list
-    parents: list
-
-    def to_dict(self):
-        return {"node": self.node, "children": self.children, "parents": self.parents}
-
-
-@dataclass
-class Paths:
-    longest: list
-    greedy: list
-    random: list
-    shortest: list
-
-    def to_dict(self):
-        return {
-            "longest": self.longest,
-            "greedy": self.greedy,
-            "random": self.random,
-            "shortest": self.shortest,
-        }
 
 
 class Graph:
     def __init__(self, n, radius, d):
         """
         Instantiate a time-ordered list of nodes as well as other information
-        required to generate an RGG graph in minkowski space time
+        required to generate an RGG graph in minkowski space-time
 
         Args:
             n: Number of nodes
@@ -342,7 +283,7 @@ class Graph:
                 int(child)
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
-                   and self.orders[int(child)].depth == current_depth - 1
+                and self.orders[int(child)].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -497,17 +438,6 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
     return graph.to_dict()
 
 
-def file_namer(n, r, d, iters):
-    i = getcwd().split("src")[1].count("/") + 1
-
-    return (
-        f"{'../' * i}results/N-{n if not isinstance(n, list) else '(' + str(min(n)) + '-' + str(max(n)) + ')x' + str(len(n))}"
-        f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('(' + str(min(r)) + '-' + str(max(r)) + ')x' + str(len(r))).replace('.', '-')}"
-        f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
-        f"__I-{iters}.pkl"
-    )
-
-
 def multi_run(n, r, d, iters):
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
@@ -523,8 +453,8 @@ def multi_run(n, r, d, iters):
     result = p.starmap(run, inputs)
 
     with open(
-            file_namer(n, r, d, iters),
-            "wb",
+        file_namer(n, r, d, iters),
+        "wb",
     ) as fp:
         pickle.dump(result, fp)
 
@@ -535,7 +465,7 @@ def main():
     # cProfile.run("run(20, 1, 2, i=1, p=False, m=False, g=False)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
-    multi_run(list(np.linspace(1000, 10000, 100, dtype=int)), 0.1, 2, 1)
+    multi_run(nrange(1000, 10000, 100), 0.1, 2, 1)
 
     # multi_run(20, 0.5, 2, 10)
 

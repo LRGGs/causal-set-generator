@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 from src.analysis.utils import PATH_NAMES, read_pickle
 
 
@@ -27,7 +28,7 @@ def mean_distance_by_order(order_collections, orders=10):
     plt.show()
 
 
-def max_distance_by_order(order_collections, orders=10):
+def max_distance_by_order(order_collections, orders=10, show=True):
     means = []
     for graph in order_collections:
         order_means = []
@@ -48,7 +49,12 @@ def max_distance_by_order(order_collections, orders=10):
     plt.xlabel("Order")
     plt.ylabel("Maximum Separation")
 
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+
+    return [i for i in range(orders)], total_means, total_stdvs
 
 
 def mean_distance_by_path(graphs):

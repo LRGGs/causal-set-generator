@@ -21,6 +21,9 @@ isort = "^5.13.1"
 requests = "^2.31.0"
 flask = "^3.0.0"
 
+[tool.isort]
+skip_glob = ["venv*"]
+
 [tool.poe.tasks]
 black = "black ."
 isort = "isort ."

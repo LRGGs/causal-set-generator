@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
-import numpy as np
+
 from src.analysis.utils import PATH_NAMES, read_pickle
+from src.utils import nrange
 
 
 def length_of_paths_with_n(graphs):
@@ -55,8 +56,8 @@ def interval_node_discrepancy(graphs):
     plt.show()
 
 
-if __name__ == '__main__':
-    graphs = read_pickle(list(np.linspace(1000, 10000, 100, dtype=int)), 0.5, 2, 1)
+if __name__ == "__main__":
+    graphs = read_pickle(nrange(1000, 10000, 100), 0.5, 2, 1)
     length_of_paths_with_n(graphs)
     length_of_paths_with_interval(graphs)
     interval_node_discrepancy(graphs)
