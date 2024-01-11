@@ -22,12 +22,15 @@ class Data:
     y_error: np.ndarray = None
 
     def __post_init__(self):
-        for attr in vars(self):
+        for attr_name in vars(self):
+            attr = getattr(self, attr_name)
             if isinstance(attr, np.ndarray):
                 pass
-            if isinstance(attr, list):
-                setattr(self, attr, np.ndarray(attr))
+            elif isinstance(attr, list):
+                setattr(self, attr_name, np.ndarray(attr))
+            else:
+                raise TypeError(f"invalid data type: {type(attr)} for {attr}")
 
 
 if __name__ == '__main__':
-    Data(1, 1, 1, 1)
+    Data([1], [1], 1, [1])
