@@ -403,13 +403,13 @@ class Graph:
 def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
-    update_status(i + 1, "yellow")
+    #update_status(i + 1, "yellow")
     graph.configure_graph()
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
-    update_status(i + 1, "blue")
+    #update_status(i + 1, "blue")
     graph.find_paths()
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
-    update_status(i + 1, "green")
+    #update_status(i + 1, "green")
 
     if p:
         print(graph.paths.longest)
@@ -456,6 +456,7 @@ def multi_run(n, r, d, iters):
         file_namer(n, r, d, iters),
         "wb",
     ) as fp:
+        print(fp)
         pickle.dump(result, fp)
 
 
@@ -466,7 +467,6 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
 
     multi_run(nrange(1000, 10000, 100), 0.1, 2, 1)
-
     # multi_run(20, 0.5, 2, 10)
 
 
