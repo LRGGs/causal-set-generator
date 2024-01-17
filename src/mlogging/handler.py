@@ -36,7 +36,10 @@ def update_status(box_index, new_color):
     data = {"color": new_color}
     headers = {"Content-Type": "application/json"}
 
-    response = requests.put(api_url, data=json.dumps(data), headers=headers)
+    try:
+        response = requests.put(api_url, data=json.dumps(data), headers=headers)
 
-    if response.status_code != 200:
-        print(f"Failed to change color. Status code: {response.status_code}")
+        if response.status_code != 200:
+            print(f"Failed to change color. Status code: {response.status_code}")
+    except requests.exceptions.ConnectionError:
+        pass
