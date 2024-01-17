@@ -12,7 +12,6 @@ matplotlib = "^3.8.2"
 networkx = "^3.2.1"
 numba = "0.58"
 scipy = "^1.11.4"
-flask = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.4"
