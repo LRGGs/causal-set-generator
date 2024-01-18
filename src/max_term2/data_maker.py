@@ -5,8 +5,14 @@ import multiprocessing
 import time
 import pandas
 from tqdm import tqdm
+import pickle
+from utils import file_namer
 
 n_experiments = 10
+runs = 201
+n = [1000, 10000]
+r = 0.1
+d = 2
 
 def run(n, r):
     net = Network(n, r, 2)
@@ -15,25 +21,15 @@ def run(n, r):
     net.order()
     return net.df
 
+results = []
 for experiment in tqdm(range(n_experiments)):
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
 
-    n_min = 1000
-    n_max = 10000
-    r = 0.1
-    runs = 201
+    inputs = [(n, r) for n in np.linspace(n[0], n[1], runs)]
 
-    inputs = [(n, r) for n in np.linspace(n_min, n_max, runs)]
-
-    result = pd.concat(p.starmap(run, inputs))
-    result.to_pickle("../../results/"
-                     "N-({}-{})x{}__R-{:.0f}-{:.0f}__D-2__I-{}".format(
-        n_min, n_max, runs, r, r * 100, experiment + 1
-    ))
+    results.append(p.starmap(run, inputs))
 
 
-
-
-
-
+with open(file_namer(n, r, d, n_experiments), "wb") as fp:
+    pickle.dump(results, fp)
