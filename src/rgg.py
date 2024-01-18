@@ -465,8 +465,9 @@ def main():
     # import pstats
     # cProfile.run("run(20, 1, 2, i=1, p=False, m=False, g=False)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
-
-    multi_run(nrange(1000, 10000, 100), 0.1, 2, 1)
+    start = time.time()
+    multi_run(nrange(10000, 10000, 10), 0.1, 2, 1)
+    print(time.time() - start)
     # multi_run(20, 0.5, 2, 10)
 
 

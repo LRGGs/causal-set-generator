@@ -265,9 +265,11 @@ def run(n, r):
     net.generate()
     net.connect()
     net.order()
+    return net.df
 
 
 if __name__ == "__main__":
+    # Test for 10 runs of n = 10000, r = 0.1
     start = time.time()
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
@@ -279,19 +281,3 @@ if __name__ == "__main__":
     result = p.starmap(run, inputs)
     runtime = time.time() - start
     print(runtime)
-
-
-
-
-
-
-    # start = time.time()
-    # net1 = Network(10000, 0.1, 2)
-    # net1.generate()
-    # net1.connect()
-    # net1.order()
-    # runtime = time.time() - start
-    # net1.graph()
-    # net1.plot()
-    # plt.show()
-    # print(runtime)
