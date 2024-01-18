@@ -50,7 +50,7 @@ if __name__ == "__main__":
     num_boxes = int(sys.argv[1]) if len(sys.argv) > 1 else 3
 
     # Create the Flask app with the specified number of boxes
-    app = create_app(num_boxes)
+    app = create_app(100)
 
     # Run the Flask application
     app.run(debug=True)
