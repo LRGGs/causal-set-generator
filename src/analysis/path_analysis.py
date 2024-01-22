@@ -26,37 +26,17 @@ def mean_distance_by_order(order_collections, orders=10):
         label="mean sep"
     )
 
-    def f(x, a, b, c):
-        return (x**a * b)
-
-    params = [0.5, 1.7, 0]
-    popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
-    error = np.sqrt(np.diag(pcov))
+    popt = np.polyfit(x_data, y_data, deg=7)
     print(popt)
-    print(error)
 
-    plt.plot(x_data, [f(x, *popt) for x in x_data], label="max sep fit")
+    plt.plot(x_data, np.poly1d(popt)(x_data), label="mean sep fit")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.legend()
     plt.title(f"Mean Separation from Geodesic for the First {orders} Orders")
     plt.xlabel("Order")
     plt.ylabel("Mean Separation")
 
-    plt.show()
-
-    y_corr = [y - f(x, *popt) for x, y in zip(x_data, y_data) if x <= 5]
-    x_corr = [x for x in x_data if x <= 5]
-    plt.plot(x_corr, y_corr)
-
-    def f(x, a, b):
-        return a/(x + 0.01) + b
-
-    params = [0, 0]
-    popt, pcov = curve_fit(f=f, xdata=x_corr, ydata=y_corr, p0=params)
-    error = np.sqrt(np.diag(pcov))
-    print(popt)
-    print(error)
-    y_corr = [f(x, *popt) for x in x_corr]
-
-    plt.plot(x_corr, y_corr, ls="none", marker=".",)
     plt.show()
 
 
@@ -79,26 +59,18 @@ def max_distance_by_order(order_collections, orders=10):
         marker=".",
         label="max sep"
     )
-    def f(x, a, b):
-        return x**a * b
 
-    params = [0.5, 1.7]
-    popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
-    error = np.sqrt(np.diag(pcov))
+    popt = np.polyfit(x_data, y_data, deg=7)
     print(popt)
-    print(error)
 
-    plt.plot(x_data, [f(x, *popt) for x in x_data], label="max sep fit")
+    plt.plot(x_data, np.poly1d(popt)(x_data), label="max sep fit")
 
     plt.legend()
-
+    plt.xscale("log")
+    plt.yscale("log")
     plt.title(f"Maximum Separation from Geodesic for the First {orders} Orders")
     plt.xlabel("Order")
     plt.ylabel("Maximum Separation")
-
-    plt.show()
-
-    plt.plot(x_data, [y - f(x, *popt) for x, y in zip(x_data, y_data)])
     plt.show()
 
 
@@ -232,7 +204,7 @@ if __name__ == "__main__":
     graphs = read_pickle(5000, 2, 2, 100)
     order_collections = [graph["order_collections"] for graph in graphs]
     mean_distance_by_order(order_collections, 50)
-    # max_distance_by_order(order_collections, 50)
+    max_distance_by_order(order_collections, 50)
     # mean_distance_by_path(graphs)
     # greatest_distance_by_path(graphs)
     # mean_deviation_by_path(graphs)

@@ -483,8 +483,8 @@ def main():
     start = time.time()
 
     # multi_run(nrange(100, 7000, 100), 0.1, 2, 5)
-    multi_run(5000, 0.1, 2, 100)
-
+    # multi_run( 100, 0.1, 2, 100)
+    run(100, 0.1, 2, 1, g=True)
     print(time.time() - start)
 
 
