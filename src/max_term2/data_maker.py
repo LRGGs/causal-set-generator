@@ -7,12 +7,12 @@ from tqdm import tqdm
 import pickle
 from utils import file_namer
 
-folder = "scaling1"
-n_experiments = 10  # number of times we measure with the same parameters
-runs = 101  # number of times we vary independent variable
-n_min = 1000
-n_max = 10000
-r = 0.1
+folder = "scaling2"
+n_experiments = 15  # number of times we measure with the same parameters
+runs = 200  # number of times we vary independent variable
+n_min = 809
+n_max = 1019
+r = 2.0
 d = 2
 
 def run(n, r):  # Generating dataframe of one network
