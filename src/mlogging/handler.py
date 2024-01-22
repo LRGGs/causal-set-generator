@@ -43,3 +43,7 @@ def update_status(box_index, new_color):
             print(f"Failed to change color. Status code: {response.status_code}")
     except requests.exceptions.ConnectionError:
         pass
+
+
+if __name__ == '__main__':
+    start_logger()

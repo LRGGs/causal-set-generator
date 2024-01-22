@@ -46,6 +46,10 @@ class Order:
     height: int
     depth: int
 
+    @property
+    def order(self):
+        return self.height + self.depth
+
     def to_dict(self):
         return {"node": self.node, "height": self.height, "depth": self.depth}
 

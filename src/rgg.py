@@ -11,6 +11,7 @@ import numba.np.arraymath
 import numpy as np
 from numba import njit
 from numba.typed import List
+import pandas as pd
 
 from src.mlogging.handler import update_status
 from src.utils import (Node, Order, Paths, Relatives, bcolors, file_namer,
@@ -399,17 +400,32 @@ class Graph:
             "interval": self.connected_interval,
         }
 
+    def to_df(self):
+        orders = [order.order for order in self.orders]
+        data = {
+            "t_poses": [node.position[0] for node in self.nodes],
+            "x_poses": [node.position[1] for node in self.nodes],
+            "parents": [relative.parents for relative in self.relatives],
+            "children": [relative.children for relative in self.relatives],
+            "in_interval": [1 if i in self.connected_interval else 0 for i in range(self.n)],
+            "in_longest": [1 if i in self.paths.longest else 0 for i in range(self.n)],
+            "in_shortest": [1 if i in self.paths.shortest else 0 for i in range(self.n)],
+            "in_greedy": [1 if i in self.paths.greedy else 0 for i in range(self.n)],
+            "weight": [max(orders) - order for order in orders]
+        }
+        return pd.DataFrame.from_dict(data)
+
 
 def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
-    #update_status(i + 1, "yellow")
+    update_status(i + 1, "yellow")
     graph.configure_graph()
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
-    #update_status(i + 1, "blue")
+    update_status(i + 1, "blue")
     graph.find_paths()
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
-    #update_status(i + 1, "green")
+    update_status(i + 1, "green")
 
     if p:
         print(graph.paths.longest)
@@ -435,7 +451,7 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
         plt.legend()
         plt.show()
 
-    return graph.to_dict()
+    return graph.to_df()
 
 
 def multi_run(n, r, d, iters):
@@ -443,9 +459,9 @@ def multi_run(n, r, d, iters):
     p = multiprocessing.Pool(processes=cpus)
     variables = [n, r, d]
     if any(isinstance(i, list) for i in variables):
-        iters = 1
         variables = [[i] if not isinstance(i, list) else i for i in variables]
         variables = [list(i) for i in product(*variables)]
+        variables = variables * iters
         inputs = [[*j, i] for i, j in enumerate(variables)]
     else:
         inputs = [[n, r, d, i] for i in range(iters)]
@@ -456,7 +472,6 @@ def multi_run(n, r, d, iters):
         file_namer(n, r, d, iters),
         "wb",
     ) as fp:
-        print(fp)
         pickle.dump(result, fp)
 
 
@@ -466,9 +481,11 @@ def main():
     # cProfile.run("run(20, 1, 2, i=1, p=False, m=False, g=False)", "profiler")
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
-    multi_run(nrange(10000, 10000, 10), 0.1, 2, 1)
+
+    # multi_run(nrange(100, 200, 10), 0.1, 2, 2)
+    multi_run(10000, 0.5, 2, 100)
+
     print(time.time() - start)
-    # multi_run(20, 0.5, 2, 10)
 
 
 if __name__ == "__main__":
