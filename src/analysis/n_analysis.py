@@ -81,7 +81,7 @@ def interval_node_discrepancy(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_pickle(nrange(100, 7000, 100), 2, 2, 5)
+    graphs = read_pickle(nrange(100, 7000, 100), 0.1, 2, 5)
     length_of_paths_with_n(graphs)
     # length_of_paths_with_interval(graphs)
     # interval_node_discrepancy(graphs)

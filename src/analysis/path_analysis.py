@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+import matplotlib
 from src.analysis.utils import PATH_NAMES, read_pickle
+from scipy.optimize import curve_fit
+# matplotlib.use("TkAgg")
 
 
 def mean_distance_by_order(order_collections, orders=10):
@@ -13,22 +15,52 @@ def mean_distance_by_order(order_collections, orders=10):
         means.append(order_means)
     total_means = np.mean(means, axis=0)
     total_stdvs = np.std(means, axis=0) / np.sqrt(len(means))
+    x_data, y_data, y_err = [i for i in range(orders)], total_means, total_stdvs
     plt.errorbar(
-        [i for i in range(orders)],
-        total_means,
-        yerr=total_stdvs,
+        x_data,
+        y_data,
+        yerr=y_err,
         ls="none",
         capsize=5,
-        marker="x",
+        marker=".",
+        label="mean sep"
     )
+
+    def f(x, a, b, c):
+        return (x**a * b)
+
+    params = [0.5, 1.7, 0]
+    popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
+    error = np.sqrt(np.diag(pcov))
+    print(popt)
+    print(error)
+
+    plt.plot(x_data, [f(x, *popt) for x in x_data], label="max sep fit")
     plt.title(f"Mean Separation from Geodesic for the First {orders} Orders")
     plt.xlabel("Order")
     plt.ylabel("Mean Separation")
 
     plt.show()
 
+    y_corr = [y - f(x, *popt) for x, y in zip(x_data, y_data) if x <= 5]
+    x_corr = [x for x in x_data if x <= 5]
+    plt.plot(x_corr, y_corr)
 
-def max_distance_by_order(order_collections, orders=10, show=True):
+    def f(x, a, b):
+        return a/(x + 0.01) + b
+
+    params = [0, 0]
+    popt, pcov = curve_fit(f=f, xdata=x_corr, ydata=y_corr, p0=params)
+    error = np.sqrt(np.diag(pcov))
+    print(popt)
+    print(error)
+    y_corr = [f(x, *popt) for x in x_corr]
+
+    plt.plot(x_corr, y_corr, ls="none", marker=".",)
+    plt.show()
+
+
+def max_distance_by_order(order_collections, orders=10):
     means = []
     for graph in order_collections:
         order_means = []
@@ -37,24 +69,37 @@ def max_distance_by_order(order_collections, orders=10, show=True):
         means.append(order_means)
     total_means = np.mean(means, axis=0)
     total_stdvs = np.std(means, axis=0) / np.sqrt(len(means))
+    x_data, y_data, y_err = [i for i in range(orders)], total_means, total_stdvs
     plt.errorbar(
-        [i for i in range(orders)],
-        total_means,
-        yerr=total_stdvs,
+        x_data,
+        y_data,
+        yerr=y_err,
         ls="none",
         capsize=5,
-        marker="x",
+        marker=".",
+        label="max sep"
     )
+    def f(x, a, b):
+        return x**a * b
+
+    params = [0.5, 1.7]
+    popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
+    error = np.sqrt(np.diag(pcov))
+    print(popt)
+    print(error)
+
+    plt.plot(x_data, [f(x, *popt) for x in x_data], label="max sep fit")
+
+    plt.legend()
+
     plt.title(f"Maximum Separation from Geodesic for the First {orders} Orders")
     plt.xlabel("Order")
     plt.ylabel("Maximum Separation")
 
-    if show:
-        plt.show()
-    else:
-        plt.clf()
+    plt.show()
 
-    return [i for i in range(orders)], total_means, total_stdvs
+    plt.plot(x_data, [y - f(x, *popt) for x, y in zip(x_data, y_data)])
+    plt.show()
 
 
 def mean_distance_by_path(graphs):
@@ -184,11 +229,11 @@ def greatest_deviation_by_path(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_pickle(10000, 0.5, 2, 100)
+    graphs = read_pickle(5000, 2, 2, 100)
     order_collections = [graph["order_collections"] for graph in graphs]
     mean_distance_by_order(order_collections, 50)
-    max_distance_by_order(order_collections, 50)
-    mean_distance_by_path(graphs)
-    greatest_distance_by_path(graphs)
-    mean_deviation_by_path(graphs)
-    greatest_deviation_by_path(graphs)
+    # max_distance_by_order(order_collections, 50)
+    # mean_distance_by_path(graphs)
+    # greatest_distance_by_path(graphs)
+    # mean_deviation_by_path(graphs)
+    # greatest_deviation_by_path(graphs)
