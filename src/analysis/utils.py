@@ -30,7 +30,3 @@ class Data:
                 setattr(self, attr_name, np.ndarray(attr))
             else:
                 raise TypeError(f"invalid data type: {type(attr)} for {attr}")
-
-
-if __name__ == '__main__':
-    Data([1], [1], 1, [1])

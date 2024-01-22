@@ -451,7 +451,7 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
         plt.legend()
         plt.show()
 
-    return graph.to_df()
+    return graph.to_dict()
 
 
 def multi_run(n, r, d, iters):
@@ -482,8 +482,8 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    # multi_run(nrange(100, 200, 10), 0.1, 2, 2)
-    multi_run(10000, 0.5, 2, 100)
+    multi_run(nrange(100, 7000, 100), 2, 2, 5)
+    # multi_run(10000, 0.5, 2, 100)
 
     print(time.time() - start)
 
