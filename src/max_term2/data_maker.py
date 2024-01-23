@@ -8,9 +8,19 @@ import pickle
 from utils import file_namer
 
 folder = "scaling2"
-n_experiments = 10  # number of times we measure with the same parameters
+n_experiments = 2  # number of times we measure with the same parameters
 #runs = 100  # number of times we vary independent variable
-n_range = [n for n in range(3, 100)] + [n for n in range(100, 5001, 49)]
+n_range = (
+        [n for n in range(3, 11, 1)]
+        + [n for n in range(11, 22, 2)]
+        + [n for n in range(22, 35, 3)]
+        + [n for n in range(35, 60, 5)]
+        + [n for n in range(60, 103, 6)]
+        + [n for n in range(103, 200, 10)]
+        + [n for n in range(200, 300, 20)]
+        + [n for n in range(300, 6001, 50)]
+#        + [n for n in range(6000, 8000, 50)]
+)
 r = 2.0
 d = 2
 
