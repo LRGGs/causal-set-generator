@@ -8,7 +8,7 @@ import pickle
 from utils import file_namer
 
 folder = "scaling2"
-n_experiments = 2  # number of times we measure with the same parameters
+n_experiments = 1  # number of times we measure with the same parameters
 #runs = 100  # number of times we vary independent variable
 n_range = (
         [n for n in range(3, 11, 1)]
@@ -45,5 +45,5 @@ for experiment in tqdm(range(n_experiments)):
     results = p.starmap(run, inputs)  # list of dataframes
 
 
-    with open(file_namer(list(n_range), r, d, experiment, folder), "wb") as fp:
+    with open(file_namer(list(n_range), r, d, 10, folder), "wb") as fp:
         pickle.dump(results, fp)

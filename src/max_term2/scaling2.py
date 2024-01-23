@@ -51,6 +51,6 @@ plt.show()
 plt.grid()
 plt.title("Path Length vs Number of Nodes")
 plt.errorbar(n_range, l_path_means_r20,
-             yerr= l_path_stds_r20, label= "$r=\infty$", fmt= 'g.', capsize= 2)
+             yerr= l_path_stds_r20, label= "r$=\infty$", fmt= 'g.', capsize= 2)
 plt.legend()
 plt.show()
