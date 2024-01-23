@@ -8,10 +8,9 @@ import pickle
 from utils import file_namer
 
 folder = "scaling2"
-n_experiments = 15  # number of times we measure with the same parameters
-runs = 200  # number of times we vary independent variable
-n_min = 809
-n_max = 1019
+n_experiments = 10  # number of times we measure with the same parameters
+#runs = 100  # number of times we vary independent variable
+n_range = [n for n in range(3, 100)] + [n for n in range(100, 5001, 49)]
 r = 2.0
 d = 2
 
@@ -30,7 +29,7 @@ for experiment in tqdm(range(n_experiments)):
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
 
-    n_range = np.linspace(n_min, n_max, runs).astype(int)
+    #n_range = np.linspace(n_min, n_max, runs).astype(int)
     inputs = [(n, r) for n in n_range]
 
     results = p.starmap(run, inputs)  # list of dataframes

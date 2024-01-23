@@ -19,16 +19,17 @@ for file in os.listdir(data_dir):
 
     # Store length of longest path for each run
     l_path = [df.query("in_longest == 1").shape[0] for df in data]
-    if "R-2-0" in file and "200" in file:
+    if "R-2-0" in file and "100" in file:
+        print(file)
         l_path_data.append(l_path)
 
 l_path_data = np.vstack(l_path_data)
 l_path_means = np.mean(l_path_data, axis= 0)
 l_path_stds = np.std(l_path_data, axis= 0)
-n_range = np.linspace(809, 1019, 200)
+n_range = np.linspace(3, 5000, 100)
 
 plt.grid()
 plt.errorbar(n_range, l_path_means,
-             yerr= l_path_stds, label= "$r=\infty$", fmt= 'g.', capsize= 1)
+             yerr= l_path_stds, label= "$r=\infty$", fmt= 'g.', capsize= 2)
 plt.legend()
 plt.show()

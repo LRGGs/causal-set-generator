@@ -98,10 +98,10 @@ class Network:
     # GENERATE AND CONNECT
 
     def generate(self):
+        np.random.seed(random.randint(0, 16372723))
+
         # Generate uniform points
-        square_poses = np.array(
-            [np.random.uniform(0, 0.5, self.d) for n in range(self.n - 2)]
-        )
+        square_poses = np.random.uniform(0, 0.5, size= (self.n - 2, self.d,))
         source_sink = np.array([[0, 0], [0.5, 0.5]])
         square_poses = np.append(square_poses, source_sink, axis=0)
 
@@ -270,14 +270,21 @@ def run(n, r):
 
 if __name__ == "__main__":
     # Test for 10 runs of n = 10000, r = 0.1
-    start = time.time()
-    cpus = multiprocessing.cpu_count() - 1
-    p = multiprocessing.Pool(processes=cpus)
+    # start = time.time()
+    # cpus = multiprocessing.cpu_count() - 1
+    # p = multiprocessing.Pool(processes=cpus)
+    #
+    # runs = 10
+    # inputs = [(n, r) for n, r in zip(np.linspace(10000, 10000, runs),
+    #                                  np.linspace(0.1, 0.1, runs))]
+    #
+    # result = p.starmap(run, inputs)
+    # runtime = time.time() - start
+    # print(runtime)
 
-    runs = 10
-    inputs = [(n, r) for n, r in zip(np.linspace(10000, 10000, runs),
-                                     np.linspace(0.1, 0.1, runs))]
-
-    result = p.starmap(run, inputs)
-    runtime = time.time() - start
-    print(runtime)
+    net = Network(30, 2, 2)
+    net.generate()
+    net.connect()
+    net.order()
+    net.graph()
+    plt.show()
