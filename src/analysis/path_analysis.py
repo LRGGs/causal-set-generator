@@ -30,8 +30,7 @@ def mean_distance_by_order(order_collections, orders=10):
     print(popt)
 
     plt.plot(x_data, np.poly1d(popt)(x_data), label="mean sep fit")
-    plt.xscale("log")
-    plt.yscale("log")
+
     plt.legend()
     plt.title(f"Mean Separation from Geodesic for the First {orders} Orders")
     plt.xlabel("Order")
@@ -201,10 +200,10 @@ def greatest_deviation_by_path(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_pickle(5000, 2, 2, 100)
+    graphs = read_pickle(10000, 0.5, 2, 100)
     order_collections = [graph["order_collections"] for graph in graphs]
     mean_distance_by_order(order_collections, 50)
-    max_distance_by_order(order_collections, 50)
+    # max_distance_by_order(order_collections, 50)
     # mean_distance_by_path(graphs)
     # greatest_distance_by_path(graphs)
     # mean_deviation_by_path(graphs)
