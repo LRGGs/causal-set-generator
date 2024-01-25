@@ -10,8 +10,6 @@ from numba.typed import List
 import numba.np.arraymath
 import networkx as nx
 
-matplotlib.use("TkAgg")
-
 
 def depth_first_search(node, vis, depths, children):
     vis[node] = True
@@ -229,8 +227,9 @@ class Network:
                 for child in children[node]
                 if int(child) in connected_interval
             ]
-            # Minimum interval square = Maximum proper time
-            next_node = min(child_intervals, key=lambda l: l[1])[0]
+            # Maximum interval square = Minimum proper time
+            # Greedy path algo tries to make longest path, so it will take smallest proper time step
+            next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append(next_node)
             node = next_node
 
@@ -269,6 +268,8 @@ def run(n, r):
 
 
 if __name__ == "__main__":
+    matplotlib.use("TkAgg")
+
     # Test for 10 runs of n = 10000, r = 0.1
     # start = time.time()
     # cpus = multiprocessing.cpu_count() - 1
@@ -282,7 +283,7 @@ if __name__ == "__main__":
     # runtime = time.time() - start
     # print(runtime)
 
-    net = Network(30, 2, 2)
+    net = Network(5, 2, 2)
     net.generate()
     net.connect()
     net.order()

@@ -1,4 +1,5 @@
 from os import getcwd
+import numpy as np
 
 def file_namer(n, r, d, version, folder):
     path = getcwd().split("src")[0]
@@ -10,3 +11,7 @@ def file_namer(n, r, d, version, folder):
         f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
         f"__V-{version}.pkl"
     )
+
+
+def chi_sqr(data, fit, uncertainties, dofs):  # numpy array inputs
+    return np.sum((data - fit)**2 / uncertainties) / dofs
