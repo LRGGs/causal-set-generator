@@ -37,8 +37,8 @@ def length_of_paths_with_n(graphs):
         print(f"{popt[1]} * x ^ {popt[0]}")
         print(f"error: {error}")
 
-        popt = np.polyfit(np.log(x_data), np.log(y_data), deg=1)
-        print(f"log(y) = {popt[0]} * log(x) + {popt[1]}")
+        poptreg = np.polyfit(np.log(x_data), np.log(y_data), deg=1)
+        print(f"log(y) = {poptreg[0]} * log(x) + {poptreg[1]}")
 
         plt.plot(x_data, [f(x, *popt) for x in x_data], label=f"{path} fit")
 
