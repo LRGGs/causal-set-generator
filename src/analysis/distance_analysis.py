@@ -1,8 +1,10 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib
-from src.analysis.utils import PATH_NAMES, read_pickle
 from scipy.optimize import curve_fit
+
+from src.analysis.utils import PATH_NAMES, read_pickle
+
 # matplotlib.use("TkAgg")
 
 

@@ -1,13 +1,15 @@
 from collections import defaultdict
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib
-from src.analysis.utils import PATH_NAMES, read_pickle
-from src.utils import nrange
-from scipy.optimize import curve_fit
+
 # matplotlib.use("TkAgg")
 import seaborn as sns
+from scipy.optimize import curve_fit
+
+from src.analysis.utils import PATH_NAMES, read_pickle
+from src.utils import nrange
 
 
 def mean_distance_by_weight(order_collections, orders=10):
@@ -21,13 +23,7 @@ def mean_distance_by_weight(order_collections, orders=10):
     total_stdvs = np.std(means, axis=0) / np.sqrt(len(means))
     x_data, y_data, y_err = [i for i in range(orders)], total_means, total_stdvs
     plt.errorbar(
-        x_data,
-        y_data,
-        yerr=y_err,
-        ls="none",
-        capsize=5,
-        marker=".",
-        label="mean sep"
+        x_data, y_data, yerr=y_err, ls="none", capsize=5, marker=".", label="mean sep"
     )
 
     popt = np.polyfit(x_data, y_data, deg=7)
@@ -54,13 +50,7 @@ def max_distance_by_weight(order_collections, orders=10):
     total_stdvs = np.std(means, axis=0) / np.sqrt(len(means))
     x_data, y_data, y_err = [i for i in range(orders)], total_means, total_stdvs
     plt.errorbar(
-        x_data,
-        y_data,
-        yerr=y_err,
-        ls="none",
-        capsize=5,
-        marker=".",
-        label="max sep"
+        x_data, y_data, yerr=y_err, ls="none", capsize=5, marker=".", label="max sep"
     )
 
     popt = np.polyfit(x_data, y_data, deg=7)
@@ -91,16 +81,16 @@ def weight_n_distance_heatmap(graphs):
         n_weight_seps[key] = np.mean(value, axis=0)
     vals = np.array(list(n_weight_seps.values()))
 
-    # plt.figure(figsize=(8, 12))
-    # plt.imshow(vals)
-    # plt.yticks(np.arange(len(n_weight_seps.keys())), labels=list(n_weight_seps.keys()))
-    # plt.xticks(np.arange(weights), rotation="vertical")
-    # plt.xlabel("Weight")
-    # plt.ylabel("Number of Nodes")
-    # colorbar = plt.colorbar()
-    # colorbar.set_label('Mean Separation From Geodesic')
-    #
-    # plt.show()
+    plt.figure(figsize=(8, 12))
+    plt.imshow(vals)
+    plt.yticks(np.arange(len(n_weight_seps.keys())), labels=list(n_weight_seps.keys()))
+    plt.xticks(np.arange(weights), rotation="vertical")
+    plt.xlabel("Weight")
+    plt.ylabel("Number of Nodes")
+    colorbar = plt.colorbar()
+    colorbar.set_label('Mean Separation From Geodesic')
+
+    plt.show()
 
     select_n = list(n_weight_seps.keys())
     xs, ys = [], []

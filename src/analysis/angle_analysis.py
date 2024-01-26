@@ -1,8 +1,13 @@
+from collections import defaultdict
+
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib
-from src.analysis.utils import PATH_NAMES, read_pickle
 from scipy.optimize import curve_fit
+
+from src.analysis.utils import PATH_NAMES, read_pickle
+from src.utils import nrange
+
 # matplotlib.use("TkAgg")
 
 
@@ -18,9 +23,7 @@ def angle_between(v1, v2):
 
 def mean_deviation_by_path(graphs):
     total_angs = []
-    j = -1
     for graph in graphs:
-        j += 1
         paths = []
         for name in PATH_NAMES:
             path = graph["paths"].get(name)
@@ -29,8 +32,6 @@ def mean_deviation_by_path(graphs):
         for path in paths:
             path = sorted(list(path))
             angs = []
-            if len(path) - 1 == 0:
-                print(path, print(j))
             for i in range(len(path) - 2):
                 v1 = (
                     graph["nodes"][path[i + 1]]["position"]
@@ -86,9 +87,42 @@ def greatest_deviation_by_path(graphs):
     plt.show()
 
 
+def mean_angular_deviations_per_path_per_n(graphs):
+    for path_name in PATH_NAMES:
+        if path_name != "shortest":
+            n_angles = defaultdict(list)
+            n_errors = defaultdict(list)
+            for graph in graphs:
+                angles = []
+                path = graph["paths"][path_name]
+                path = set(list(sum(path, ())))
+                path = sorted(list(path))
+                for i in range(len(path) - 2):
+                    v1 = (
+                            graph["nodes"][path[i + 1]]["position"]
+                            - graph["nodes"][path[i]]["position"]
+                    )
+                    v2 = (
+                            graph["nodes"][path[i + 2]]["position"]
+                            - graph["nodes"][path[i + 1]]["position"]
+                    )
+                    angles.append(angle_between(v1, v2))
+                # TODO: do i need to abs() the angles here?
+                n_angles[len(graph["nodes"])].append(np.mean([abs(a) for a in angles]))
+            for key, values in n_angles.items():
+                n_angles[key] = np.mean(values)
+                n_errors[key] = np.std(values) / len(values) ** 0.5
+            plt.errorbar(list(n_angles.keys()), list(n_angles.values()), label=path_name, yerr=list(n_errors.values()), ls="none", capsize=5, marker=".")
+    plt.legend()
+    plt.xlabel("Number of Nodes")
+    plt.ylabel("Angular Deviation Between Edges")
+    plt.show()
+
+
 if __name__ == "__main__":
-    graphs = read_pickle(10000, 0.5, 2, 100)
-    # mean_distance_by_path(graphs)
-    # greatest_distance_by_path(graphs)
+    # graphs = read_pickle(10000, 0.5, 2, 100)
     # mean_deviation_by_path(graphs)
     # greatest_deviation_by_path(graphs)
+
+    graphs = read_pickle(nrange(100, 7000, 100), 0.1, 2, 5)
+    mean_angular_deviations_per_path_per_n(graphs)
