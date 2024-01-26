@@ -70,21 +70,22 @@ def max_distance_by_weight(order_collections, orders=10):
 def weight_n_distance_heatmap(graphs):
     weights = 25
     n_weight_seps = defaultdict(list)
+    n_weight_errs = defaultdict(list)
     for graph in graphs:
-        if len(graph["nodes"]) > 4000:
-            mean_seps = []
-            for weight in graph["order_collections"]:
-                mean_sep = np.mean([abs(pos[1]) for pos in weight])
-                mean_seps.append(mean_sep)
-            n_weight_seps[len(graph["nodes"])].append(mean_seps[:weights])
+        mean_seps = []
+        for weight in graph["order_collections"]:
+            mean_sep = np.mean([abs(pos[1]) for pos in weight])
+            mean_seps.append(mean_sep)
+        n_weight_seps[len(graph["nodes"])].append(mean_seps[:weights])
     for key, value in n_weight_seps.items():
         n_weight_seps[key] = np.mean(value, axis=0)
+        n_weight_errs[key] = np.std(value, axis=0) / np.sqrt(len(value))
     vals = np.array(list(n_weight_seps.values()))
 
-    plt.figure(figsize=(8, 12))
-    plt.imshow(vals)
-    plt.yticks(np.arange(len(n_weight_seps.keys())), labels=list(n_weight_seps.keys()))
-    plt.xticks(np.arange(weights), rotation="vertical")
+    min_y, max_y = float(min(n_weight_seps.keys())), float(max(n_weight_seps.keys()))
+    min_x, max_x = 0.0, float(weights)
+    plt.figure(figsize=(5, 9))
+    plt.imshow(vals, extent=(min_x, max_x, min_y, max_y), aspect=0.01)
     plt.xlabel("Weight")
     plt.ylabel("Number of Nodes")
     colorbar = plt.colorbar()
@@ -92,13 +93,27 @@ def weight_n_distance_heatmap(graphs):
 
     plt.show()
 
+    plt.errorbar(
+        list(n_weight_seps.keys()),
+        [x[0] for x in n_weight_seps.values()],
+        yerr=[x[0] for x in n_weight_errs.values()],
+        ls="none",
+        capsize=5,
+        marker=".",
+    )
+    plt.xlabel("Number of Nodes")
+    plt.ylabel("Mean Separation from Geodesic for Zeroth Weight")
+    plt.show()
+
     xs, ys = list(n_weight_seps.keys()), [max(v) for v in n_weight_seps.values()]
     poptreg = np.polyfit(xs, ys, deg=1)
     print(f"sep = {poptreg[0]} * n + {poptreg[1]}")
     plt.plot(xs, ys)
+    plt.xlabel("Number of Nodes")
+    plt.ylabel("Mean Separation from Geodesic for 25th Weight")
     plt.show()
 
-    select_n = list(n_weight_seps.keys())[7::8]
+    select_n = list(n_weight_seps.keys())[14::16]
     for key, value in n_weight_seps.items():
         if key in select_n:
             y_vals = np.array(list(value)) / (poptreg[0] * key + poptreg[1])
@@ -106,7 +121,7 @@ def weight_n_distance_heatmap(graphs):
 
     plt.legend()
     plt.xlabel("order")
-    plt.ylabel("mean separation from geodesic")
+    plt.ylabel(f"mean separation from geodesic normalised by:\n {poptreg[0]} * N + {poptreg[1]}")
     plt.show()
 
 

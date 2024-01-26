@@ -89,7 +89,7 @@ def greatest_deviation_by_path(graphs):
 
 def mean_angular_deviations_per_path_per_n(graphs):
     for path_name in PATH_NAMES:
-        if path_name != "shortest":
+        if path_name not in ["shortests", "randoms"]:
             n_angles = defaultdict(list)
             n_errors = defaultdict(list)
             for graph in graphs:
@@ -106,9 +106,16 @@ def mean_angular_deviations_per_path_per_n(graphs):
                             graph["nodes"][path[i + 2]]["position"]
                             - graph["nodes"][path[i + 1]]["position"]
                     )
-                    angles.append(angle_between(v1, v2))
+                    ang = angle_between(v1, v2)
+                    if ang > np.pi / 4:
+                        print(ang)
+                        print([graph["nodes"][path[i+j]]["position"] for j in range(3)])
+                        print("==============================")
+                    if v2[1] < v1[1]:
+                        ang *= - 1
+                    angles.append(ang)
                 # TODO: do i need to abs() the angles here?
-                n_angles[len(graph["nodes"])].append(np.mean([abs(a) for a in angles]))
+                n_angles[len(graph["nodes"])].append(np.mean([a for a in angles]))
             for key, values in n_angles.items():
                 n_angles[key] = np.mean(values)
                 n_errors[key] = np.std(values) / len(values) ** 0.5
@@ -117,6 +124,10 @@ def mean_angular_deviations_per_path_per_n(graphs):
     plt.xlabel("Number of Nodes")
     plt.ylabel("Angular Deviation Between Edges")
     plt.show()
+
+
+def angle_test():
+    node_poses = [(0, 0), (0.1, 0.3), (0.2, -0.3), (0.3, 0.4)]
 
 
 if __name__ == "__main__":
