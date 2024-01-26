@@ -92,23 +92,21 @@ def weight_n_distance_heatmap(graphs):
 
     plt.show()
 
-    select_n = list(n_weight_seps.keys())
-    xs, ys = [], []
+    xs, ys = list(n_weight_seps.keys()), [max(v) for v in n_weight_seps.values()]
+    poptreg = np.polyfit(xs, ys, deg=1)
+    print(f"sep = {poptreg[0]} * n + {poptreg[1]}")
+    plt.plot(xs, ys)
+    plt.show()
+
+    select_n = list(n_weight_seps.keys())[7::8]
     for key, value in n_weight_seps.items():
         if key in select_n:
-            xs.append(key)
-            ys.append(max(value))
-            y_vals = np.array(list(value)) / (-1.43e-5 * key + 0.31)
+            y_vals = np.array(list(value)) / (poptreg[0] * key + poptreg[1])
             plt.plot(np.arange(weights), y_vals, ls="none", marker=".", label=key)
 
     plt.legend()
     plt.xlabel("order")
     plt.ylabel("mean separation from geodesic")
-    plt.show()
-
-    poptreg = np.polyfit(xs, ys, deg=1)
-    print(f"sep = {poptreg[0]} * n + {poptreg[1]}")
-    plt.plot(xs, ys)
     plt.show()
 
 
@@ -118,5 +116,5 @@ if __name__ == "__main__":
     # mean_distance_by_weight(order_collections, 50)
     # max_distance_by_weight(order_collections, 50)
 
-    graphs = read_pickle(nrange(100, 7000, 100), 2, 2, 5)
+    graphs = read_pickle(nrange(4000, 10000, 200), 0.1, 2, 5)
     weight_n_distance_heatmap(graphs)
