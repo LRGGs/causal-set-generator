@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 
 import matplotlib
@@ -7,6 +8,7 @@ import numpy as np
 # matplotlib.use("TkAgg")
 import seaborn as sns
 from scipy.optimize import curve_fit
+from scipy.stats import ks_2samp
 
 from src.analysis.utils import PATH_NAMES, read_pickle
 from src.utils import nrange
@@ -114,15 +116,41 @@ def weight_n_distance_heatmap(graphs):
     plt.show()
 
     select_n = list(n_weight_seps.keys())[14::16]
+    collapsed_y = []
     for key, value in n_weight_seps.items():
+        y_vals = np.array(list(value)) / (poptreg[0] * key + poptreg[1])
+        collapsed_y.append(y_vals)
         if key in select_n:
-            y_vals = np.array(list(value)) / (poptreg[0] * key + poptreg[1])
             plt.plot(np.arange(weights), y_vals, ls="none", marker=".", label=key)
 
     plt.legend()
     plt.xlabel("order")
     plt.ylabel(f"mean separation from geodesic normalised by:\n {poptreg[0]} * N + {poptreg[1]}")
     plt.show()
+
+    x_data, y_data, y_err = np.arange(weights), np.mean(collapsed_y, axis=0), np.std(collapsed_y, axis=0)/len(collapsed_y)**0.5
+    plt.errorbar(
+        x_data, y_data, y_err, ls="none", marker="x", capsize=5, label="data"
+    )
+    popt = np.polyfit(x_data, y_data, deg=7)
+    print(f"seventh order polynomial with with constants: {popt}")
+
+    plt.plot(np.arange(weights), np.poly1d(popt)(x_data), label="fit")
+
+    plt.legend()
+    plt.xlabel("order")
+    plt.ylabel(f"mean separation from geodesic normalised by:\n {poptreg[0]} * N + {poptreg[1]}")
+    plt.show()
+
+    results = []
+    passed = 0
+    for dataset1, dataset2 in itertools.combinations(collapsed_y, 2):
+        _, p_value = ks_2samp(dataset1, dataset2)
+        results.append(p_value)
+        if p_value > 0.9:
+            passed += 1
+    print(f"mean KS_2samp P val: {np.mean(results)}")
+    print(f"number of pairs accepted at 10%: {passed}/{len(results)}")
 
 
 if __name__ == "__main__":
