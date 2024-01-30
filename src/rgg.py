@@ -393,10 +393,10 @@ class Graph:
 
     def to_dict(self):
         return {
-            "nodes": [node.indx for node in self.nodes],
+            "nodes": [node.position for node in self.nodes],
             # "order": [order.to_dict() for order in self.orders],
-            "order_collections": self.weight_collections(),
-            # "paths": self.paths.to_dict(),
+            # "order_collections": self.weight_collections(),
+            "paths": self.paths.to_dict(),
             # "interval": self.connected_interval,
         }
 
@@ -482,7 +482,7 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    multi_run(nrange(4000, 10000, 200), 0.1, 2, 5)
+    multi_run(nrange(100, 10000, 100), 0.2, 2, 25)
     # multi_run( 100, 0.1, 2, 100)
     # run(100, 0.1, 2, 1, g=True)
     print(time.time() - start)
