@@ -482,7 +482,7 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    multi_run(nrange(100, 10000, 100), 0.2, 2, 25)
+    multi_run(nrange(200, 10000, 80), 0.2, 2, 25)
     # multi_run( 100, 0.1, 2, 100)
     # run(100, 0.1, 2, 1, g=True)
     print(time.time() - start)
