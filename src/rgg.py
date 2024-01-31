@@ -13,9 +13,8 @@ from numba import njit
 from numba.typed import List
 import pandas as pd
 
-from src.mlogging.handler import update_status
-from src.utils import (Node, Order, Paths, Relatives, bcolors, file_namer,
-                       nrange)
+from mlogging.handler import update_status
+from utils import (Node, Order, Paths, Relatives, bcolors, file_namer, nrange)
 
 # matplotlib.use("TkAgg")
 
@@ -69,7 +68,7 @@ class Graph:
         c = time.time()
         self.random_path()
         d = time.time()
-        self.greedy_path()
+        self.greedy_path_euc()
         e = time.time()
         if timing:
             print(f"longest: {b - a}")
@@ -335,7 +334,7 @@ class Graph:
             node = self.nodes[next_node]
         self.paths.random = path
 
-    def greedy_path(self):
+    def greedy_path_euc(self):
         """
         Run this only after finding the order. Choose the next
         node at each step as the node with the largest interval.
@@ -351,6 +350,26 @@ class Graph:
                 if int(child) in self.connected_interval
             ]
             next_node = min(child_intervals, key=lambda l: l[1])[0]
+            path.append((node.indx, next_node))
+            node = self.nodes[next_node]
+        self.paths.greedy = path
+
+    def greedy_path_min(self):
+        """
+        Run this only after finding the order. Choose the next
+        node at each step as the node with the largest interval.
+        Returns:
+            greedy path list of edges
+        """
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            child_intervals = [
+                (int(child), self.proper_time((node.indx, int(child))))
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
+            ]
+            next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.greedy = path
@@ -393,10 +412,10 @@ class Graph:
 
     def to_dict(self):
         return {
-            "nodes": [node.position for node in self.nodes],
+            "nodes": [node.indx for node in self.nodes],
             # "order": [order.to_dict() for order in self.orders],
-            # "order_collections": self.weight_collections(),
-            "paths": self.paths.to_dict(),
+            "order_collections": self.weight_collections(),
+            # "paths": self.paths.to_dict(),
             # "interval": self.connected_interval,
         }
 
@@ -482,9 +501,9 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    multi_run(nrange(200, 10000, 80), 0.2, 2, 25)
+    multi_run(nrange(500, 10000, 80), 0.1, 2, 20)
     # multi_run( 100, 0.1, 2, 100)
-    # run(100, 0.1, 2, 1, g=True)
+    # run(100, 0.3, 2, 1, m=True)
     print(time.time() - start)
 
 

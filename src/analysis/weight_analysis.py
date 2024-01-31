@@ -70,7 +70,11 @@ def max_distance_by_weight(order_collections, orders=10):
 
 
 def weight_n_distance_heatmap(graphs):
-    weights = 25
+    weights = 50
+    for graph in graphs:
+        for i, weight in enumerate(graph["order_collections"]):
+            if i < weights and len(weight) == 0:
+                weights = i
     n_weight_mean_seps = defaultdict(list)
     n_weight_mean_errs = defaultdict(list)
     for graph in graphs:
@@ -82,7 +86,7 @@ def weight_n_distance_heatmap(graphs):
     for key, value in n_weight_mean_seps.items():
         n_weight_mean_seps[key] = np.mean(value, axis=0)
         n_weight_mean_errs[key] = np.std(value, axis=0) / np.sqrt(len(value))
-    vals = np.array(list(n_weight_mean_seps.values()))
+    vals = np.flip(np.array(list(n_weight_mean_seps.values())), axis=0)
 
     min_y, max_y = float(min(n_weight_mean_seps.keys())), float(max(n_weight_mean_seps.keys()))
     min_x, max_x = 0.0, float(weights)
@@ -95,64 +99,75 @@ def weight_n_distance_heatmap(graphs):
 
     plt.show()
 
-    plt.errorbar(
-        list(n_weight_mean_seps.keys()),
-        [x[0] for x in n_weight_mean_seps.values()],
-        yerr=[x[0] for x in n_weight_mean_errs.values()],
-        ls="none",
-        capsize=5,
-        marker=".",
-    )
-    plt.xlabel("Number of Nodes")
-    plt.ylabel("Mean Separation from Geodesic for Zeroth Weight")
+    def f(x, a, b):
+        return a * x ** b
+
+    As = []
+    Bs = []
+    Ws = list(range(weights))
+
+    for i in range(weights):
+        xss = list(n_weight_mean_seps.keys())
+        yss = [v[i] for v in n_weight_mean_seps.values()]
+        y_errss = [v[i] for v in n_weight_mean_errs.values()]
+
+        xs, ys, y_errs = [], [], []
+        for x, y, e in zip(xss, yss, y_errss):
+            if not np.isnan(y):
+                xs.append(x)
+                ys.append(y)
+                y_errs.append(e)
+
+        params = [-1, 1]
+        popt, pcov = curve_fit(f=f, xdata=xs, ydata=ys, p0=params, sigma=y_errs)
+        error = np.sqrt(np.diag(pcov))
+        As.append(popt[0])
+        Bs.append(popt[1])
+
+        if i == 0 or i == weights-1:
+            print(f"weight {i}: ({popt[0]}+-{error[0]}) * N ^ ({popt[1]}+-{error[1]})")
+            plt.errorbar(xs, ys, yerr=y_errs, ls="none", capsize=5, marker=".", label="data")
+            plt.plot(xs, [f(x, *popt) for x in xs], label="fit")
+
+            plt.xlabel("Number of Nodes")
+            plt.ylabel(f"Mean Separation from Geodesic for Weight {i}")
+            plt.show()
+
+    plt.plot(Ws, As, label="factor: a")
+    plt.plot(Ws, Bs, label="exponent: b")
+    plt.xlabel("weight")
+    plt.ylabel("value")
+    plt.title("a * N ** b")
+    plt.legend()
     plt.show()
 
-    xs, ys = list(n_weight_mean_seps.keys()), [v[24] for v in n_weight_mean_seps.values()]
-    y_errs = [v[24] for v in n_weight_mean_errs.values()]
-    poptreg = np.polyfit(xs, ys, deg=1)
-    print(f"sep = {poptreg[0]} * n + {poptreg[1]}")
-    plt.errorbar(
-        xs,
-        ys,
-        yerr=y_errs,
-        ls="none",
-        capsize=5,
-        marker=".",
-        label="data"
-    )
-    plt.plot(xs, np.poly1d(poptreg)(xs), label="fit")
-    plt.xlabel("Number of Nodes")
-    plt.ylabel("Mean Separation from Geodesic for 25th Weight")
-    plt.show()
-
-    collapsed_y = []
+    select_n = list(n_weight_mean_seps.keys())[0::int(len(n_weight_mean_seps.keys())/10)]
     for key, value in n_weight_mean_seps.items():
         y_vals = np.array(list(value))
-        collapsed_y.append(y_vals)
-        plt.plot(np.arange(weights), y_vals, ls="none", marker=".", label=key)
+        if key in select_n:
+            plt.plot(np.arange(weights), y_vals, ls="none", marker=".", label=key)
 
     plt.legend()
     plt.xlabel("weight")
     plt.ylabel(f"mean separation from geodesic")
     plt.show()
 
-    select_n = list(n_weight_mean_seps.keys())[14::16]
     collapsed_y = []
     for key, value in n_weight_mean_seps.items():
-        y_vals = np.array(list(value)) / (poptreg[0] * key + poptreg[1])
+        y_vals = []
+        for val in value:
+            y_vals.append(val/f(key, As[-1], Bs[-1]))
         collapsed_y.append(y_vals)
         if key in select_n:
             plt.plot(np.arange(weights), y_vals, ls="none", marker=".", label=key)
 
     plt.legend()
     plt.xlabel("weight")
-    plt.ylabel(f"mean separation from geodesic normalised by:\n {poptreg[0]} * N + {poptreg[1]}")
+    plt.ylabel(f"mean separation from geodesic normalised by ??")
     plt.show()
 
     x_data, y_data, y_err = np.arange(weights), np.mean(collapsed_y, axis=0), np.std(collapsed_y, axis=0)/len(collapsed_y)**0.5
-    plt.errorbar(
-        x_data, y_data, y_err, ls="none", marker="x", capsize=5, label="data"
-    )
+    plt.errorbar(x_data, y_data, y_err, ls="none", marker="x", capsize=5, label="data")
     popt = np.polyfit(x_data, y_data, deg=7)
     print(f"seventh order polynomial with with constants: {popt}")
 
@@ -160,7 +175,7 @@ def weight_n_distance_heatmap(graphs):
 
     plt.legend()
     plt.xlabel("weight")
-    plt.ylabel(f"mean separation from geodesic normalised by:\n {poptreg[0]} * N + {poptreg[1]}")
+    plt.ylabel(f"mean separation from geodesic normalised by: ??")
     plt.show()
 
     results = []
@@ -173,6 +188,18 @@ def weight_n_distance_heatmap(graphs):
     print(f"mean KS_2samp P val: {np.mean(results)}")
     print(f"number of pairs accepted at 10%: {passed}/{len(results)}")
 
+    data = np.array([list(vals) for vals in n_weight_mean_seps.values()])
+    zeroth = data[:, 0]
+    first = data[:, 1]
+    counts_0, bins = np.histogram(zeroth)
+    counts_1, bins = np.histogram(first, bins)
+    plt.stairs(counts_0, bins, label="zeroth")
+    plt.stairs(counts_1, bins, label="first")
+    plt.legend()
+    plt.show()
+    _, p_value = ks_2samp(counts_0, counts_1)
+    print(f"KS_2samp P val: {p_value}")
+
 
 if __name__ == "__main__":
     # graphs = read_pickle(10000, 0.5, 2, 100)
@@ -180,5 +207,5 @@ if __name__ == "__main__":
     # mean_distance_by_weight(order_collections, 50)
     # max_distance_by_weight(order_collections, 50)
 
-    graphs = read_pickle(nrange(4000, 10000, 200), 0.1, 2, 5)
+    graphs = read_pickle(nrange(500, 10000, 80), 0.1, 2, 20, "weights")
     weight_n_distance_heatmap(graphs)

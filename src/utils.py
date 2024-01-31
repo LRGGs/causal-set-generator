@@ -4,14 +4,14 @@ from os import getcwd
 import numpy as np
 
 
-def file_namer(n, r, d, iters):
+def file_namer(n, r, d, iters, extra=None):
     path = getcwd().split("src")[0]
 
     return (
         f"{path}/results/N-{n if not isinstance(n, list) else '(' + str(min(n)) + '-' + str(max(n)) + ')x' + str(len(n))}"
         f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('(' + str(min(r)) + '-' + str(max(r)) + ')x' + str(len(r))).replace('.', '-')}"
         f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
-        f"__I-{iters}.pkl"
+        f"__I-{iters}{'_' + extra if extra else ''}.pkl"
     )
 
 
@@ -67,14 +67,16 @@ class Relatives:
 @dataclass
 class Paths:
     longest: list
-    greedy: list
+    greedy_e: list
+    greedy_m: list
     random: list
     shortest: list
 
     def to_dict(self):
         return {
             "longest": self.longest,
-            "greedy": self.greedy,
+            "greedy_e": self.greedy_e,
+            "greedy_m": self.greedy_m,
             "random": self.random,
             "shortest": self.shortest,
         }

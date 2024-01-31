@@ -107,8 +107,8 @@ def mean_angular_deviations_per_path_per_n(graphs):
                             - graph["nodes"][path[i + 1]]
                     )
                     ang = angle_between(v1, v2)
-                    if v2[1] < v1[1]:
-                        ang *= - 1
+                    # if v2[1] < v1[1]:
+                    #     ang *= - 1
                     angles.append(ang)
                 n_angles[len(graph["nodes"])].append(np.mean(angles))
             for key, values in n_angles.items():
@@ -126,5 +126,5 @@ if __name__ == "__main__":
     # mean_deviation_by_path(graphs)
     # greatest_deviation_by_path(graphs)
 
-    graphs = read_pickle(nrange(200, 10000, 80), 0.2, 2, 25)
+    graphs = read_pickle(nrange(200, 10000, 80), 0.2, 2, 25, "angles")
     mean_angular_deviations_per_path_per_n(graphs)
