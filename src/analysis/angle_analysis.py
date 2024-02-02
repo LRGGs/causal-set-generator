@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_pickle
+from src.analysis.utils import PATH_NAMES, read_file
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")
@@ -126,5 +126,5 @@ if __name__ == "__main__":
     # mean_deviation_by_path(graphs)
     # greatest_deviation_by_path(graphs)
 
-    graphs = read_pickle(nrange(200, 10000, 80), 0.2, 2, 25, "angles")
+    graphs = read_file(nrange(200, 10000, 80), 0.2, 2, 25, "angles")
     mean_angular_deviations_per_path_per_n(graphs)

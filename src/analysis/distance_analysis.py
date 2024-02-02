@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_pickle
+from src.analysis.utils import PATH_NAMES, read_file
 
 # matplotlib.use("TkAgg")
 
@@ -55,6 +55,6 @@ def greatest_distance_by_path(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_pickle(10000, 0.5, 2, 100)
+    graphs = read_file(10000, 0.5, 2, 100)
     mean_distance_by_path(graphs)
     greatest_distance_by_path(graphs)

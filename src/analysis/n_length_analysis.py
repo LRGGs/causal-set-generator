@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from src.analysis.utils import PATH_NAMES, read_pickle
+from src.analysis.utils import PATH_NAMES, read_file
 from src.utils import nrange
 import numpy as np
 from scipy.optimize import curve_fit
@@ -73,7 +73,7 @@ def interval_node_discrepancy(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_pickle(nrange(100, 7000, 100), 2, 2, 5)
+    graphs = read_file(nrange(100, 7000, 100), 2, 2, 5)
     length_of_paths_with_n(graphs)
     # length_of_paths_with_interval(graphs)
     # interval_node_discrepancy(graphs)

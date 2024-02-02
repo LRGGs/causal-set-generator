@@ -10,7 +10,7 @@ import seaborn as sns
 from scipy.optimize import curve_fit
 from scipy.stats import ks_2samp
 
-from src.analysis.utils import PATH_NAMES, read_pickle
+from src.analysis.utils import PATH_NAMES, read_file
 from src.utils import nrange
 
 
@@ -72,17 +72,17 @@ def max_distance_by_weight(order_collections, orders=10):
 def weight_n_distance_heatmap(graphs):
     weights = 50
     for graph in graphs:
-        for i, weight in enumerate(graph["order_collections"]):
+        for i, weight in enumerate(graph["weight_collections"]):
             if i < weights and len(weight) == 0:
                 weights = i
     n_weight_mean_seps = defaultdict(list)
     n_weight_mean_errs = defaultdict(list)
     for graph in graphs:
         mean_seps = []
-        for weight in graph["order_collections"]:
+        for weight in graph["weight_collections"]:
             mean_sep = np.mean([abs(pos[1]) for pos in weight])
             mean_seps.append(mean_sep)
-        n_weight_mean_seps[len(graph["nodes"])].append(mean_seps[:weights])
+        n_weight_mean_seps[graph["n"]].append(mean_seps[:weights])
     for key, value in n_weight_mean_seps.items():
         n_weight_mean_seps[key] = np.mean(value, axis=0)
         n_weight_mean_errs[key] = np.std(value, axis=0) / np.sqrt(len(value))
@@ -207,5 +207,5 @@ if __name__ == "__main__":
     # mean_distance_by_weight(order_collections, 50)
     # max_distance_by_weight(order_collections, 50)
 
-    graphs = read_pickle(nrange(500, 10000, 80), 0.1, 2, 20, "weights")
+    graphs = read_file(nrange(500, 10000, 60), 0.1, 2, 50)
     weight_n_distance_heatmap(graphs)
