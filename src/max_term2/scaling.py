@@ -101,8 +101,8 @@ g_chisqr = chi_sqr(np.log(g_path_means)[1:],
                    g_path_means.shape[0] - 3)
 ax.plot(xs, g_reg[0] * xs + g_reg[1],
          '--', color="#E69F00", label= "Fit "
-                     "D$={:.2f}({:.1f})$, "
-                     "m$={:.5f}({:.1f})$ "
+                     "D$={:.2f}({:.0f})$, "
+                     "m$={:.5f}({:.0f})$ "
                      "$(\chi^2_\\nu ={:.2f})$".format(g_reg[0], 100*g_cov[0][0],
                                                       g_reg[1], 100*g_cov[1][1],
                                                       g_chisqr))
@@ -116,8 +116,8 @@ r_chisqr = chi_sqr(np.log(r_path_means)[1:],
                    r_path_means.shape[0] - 3)
 ax.plot(xs, r_reg[0] * xs + r_reg[1],
          '--', color="#56B4E9", label= "Fit "
-                     "D$={:.2f}({:.1f})$, "
-                     "m$={:.5f}({:.1f})$ "
+                     "D$={:.2f}({:.0f})$, "
+                     "m$={:.5f}({:.0f})$ "
                      "$(\chi^2_\\nu ={:.2f})$".format(r_reg[0], 100*r_cov[0][0],
                                                       r_reg[1], 100*r_cov[1][1],
                                                       r_chisqr))
@@ -131,8 +131,8 @@ l_chisqr = chi_sqr(np.log(l_path_means)[1:],
                    l_path_means.shape[0] - 3)
 ax.plot(xs, l_reg[0] * xs + l_reg[1],
          '--', color="#009E73", label= "Fit "
-                     "D$={:.2f}({:.1f})$, "
-                     "m$={:.5f}({:.1f})$ "
+                     "D$={:.2f}({:.0f})$, "
+                     "m$={:.5f}({:.0f})$ "
                      "$(\chi^2_\\nu ={:.2f})$".format(l_reg[0], 100*l_cov[0][0],
                                                       l_reg[1], 100*l_cov[1][1],
                                                       l_chisqr))

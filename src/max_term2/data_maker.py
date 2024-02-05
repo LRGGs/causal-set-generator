@@ -4,13 +4,13 @@ from tqdm import tqdm
 import pickle
 from utils import file_namer
 
-folder = "weight_collections"
+folder = "weight_heatmap"
 n_experiments = 10  # number of times we measure with the same parameters
-runs = 100
-# n_range = (
-#         [n for n in range(3, 3004, 500)]
-# )
-n = 1000
+# runs = 100
+n_range = (
+        [n for n in range(3, 2004, 10)]
+)
+# n = 1000
 r = 1.5
 d = 2
 
@@ -29,11 +29,11 @@ for experiment in tqdm(range(n_experiments)):
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
 
-    inputs = [(n, r) for i in range(runs)]
+    inputs = [(n, r) for n in n_range]
 
     results = p.starmap(run, inputs)  # list of dataframes
 
-    with open(file_namer(runs*[n], r, d, experiment, folder), "wb") as fp:
+    with open(file_namer(n_range, r, d, experiment + 15, folder), "wb") as fp:
         pickle.dump(results, fp)
 
     del results  # free up RAM
