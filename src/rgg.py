@@ -1,8 +1,11 @@
+import itertools
 import multiprocessing
+import os
 import pickle
 import random
 import time
-from itertools import product
+from itertools import product, repeat
+from collections import defaultdict
 
 # import matplotlib
 import matplotlib.pyplot as plt
@@ -13,9 +16,9 @@ from numba import njit
 from numba.typed import List
 import pandas as pd
 
-from src.mlogging.handler import update_status
-from src.utils import (Node, Order, Paths, Relatives, bcolors, file_namer,
-                       nrange)
+from mlogging.handler import update_status
+from utils import *
+
 
 # matplotlib.use("TkAgg")
 
@@ -42,7 +45,7 @@ class Graph:
         identity = np.identity(n=self.d, dtype=np.float32)
         identity[0][0] *= -1
         self.minkowski_metric = identity
-        self.paths = Paths([], [], [], [])
+        self.paths = Paths([], [], [], [], [])
         self.connected_interval = []
 
     def configure_graph(self, timing=False):
@@ -69,7 +72,7 @@ class Graph:
         c = time.time()
         self.random_path()
         d = time.time()
-        self.greedy_path()
+        self.greedy_path_euc()
         e = time.time()
         if timing:
             print(f"longest: {b - a}")
@@ -284,7 +287,7 @@ class Graph:
                 int(child)
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
-                and self.orders[int(child)].depth == current_depth - 1
+                   and self.orders[int(child)].depth == current_depth - 1
             ]
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
@@ -335,7 +338,7 @@ class Graph:
             node = self.nodes[next_node]
         self.paths.random = path
 
-    def greedy_path(self):
+    def greedy_path_euc(self):
         """
         Run this only after finding the order. Choose the next
         node at each step as the node with the largest interval.
@@ -351,6 +354,26 @@ class Graph:
                 if int(child) in self.connected_interval
             ]
             next_node = min(child_intervals, key=lambda l: l[1])[0]
+            path.append((node.indx, next_node))
+            node = self.nodes[next_node]
+        self.paths.greedy = path
+
+    def greedy_path_min(self):
+        """
+        Run this only after finding the order. Choose the next
+        node at each step as the node with the largest interval.
+        Returns:
+            greedy path list of edges
+        """
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            child_intervals = [
+                (int(child), self.proper_time((node.indx, int(child))))
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
+            ]
+            next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.greedy = path
@@ -373,10 +396,7 @@ class Graph:
         plt.plot(self.node_x_positions, self.node_t_positions, "g,")
 
     def weight_collections(self):
-        tot_orders = [
-            self.orders[i].depth + self.orders[i].height
-            for i in self.connected_interval
-        ]
+        tot_orders = [self.orders[i].order for i in self.connected_interval]
         max_ord = max(tot_orders)
         tot_orders = np.array(tot_orders)
         weights = max_ord - tot_orders
@@ -389,15 +409,17 @@ class Graph:
         for weight in range(min_weight, max_weight):
             collections.append(all_posses[weights == weight])
 
-        return collections
+        cleaned_collections = numpy_to_list(collections)
+        return cleaned_collections
 
     def to_dict(self):
         return {
-            "nodes": [node.to_dict() for node in self.nodes],
-            "order": [order.to_dict() for order in self.orders],
-            "order_collections": self.weight_collections(),
-            "paths": self.paths.to_dict(),
-            "interval": self.connected_interval,
+            "n": len(self.nodes),
+            "nodes": [node.indx for node in self.nodes],
+            # "order": [order.to_dict() for order in self.orders],
+            "weight_collections": self.weight_collections(),
+            # "paths": self.paths.to_dict(),
+            # "interval": self.connected_interval,
         }
 
     def to_df(self):
@@ -419,19 +441,20 @@ class Graph:
 def run(n, r, d, i=1, p=False, g=False, m=False):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
-    update_status(i + 1, "yellow")
+    # update_status(i + 1, "yellow")
     graph.configure_graph()
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
-    update_status(i + 1, "blue")
+    # update_status(i + 1, "blue")
     graph.find_paths()
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
-    update_status(i + 1, "green")
+    # update_status(i + 1, "green")
 
     if p:
         print(graph.paths.longest)
         print(graph.paths.shortest)
         print(graph.paths.random)
-        print(graph.paths.greedy)
+        print(graph.paths.greedy_m)
+        print(graph.paths.greedy_e)
 
     if g:
         g = nx.DiGraph()
@@ -451,10 +474,18 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
         plt.legend()
         plt.show()
 
-    return graph.to_dict()
+    thread = multiprocessing.current_process().name
+    path = os.getcwd().split("src")[0]
+    filename = f"{path}/json_results/temp/{str(thread)}"
+    append_json_lines(filename, graph.to_dict())
+    del graph
 
 
 def multi_run(n, r, d, iters):
+    new_file = file_namer(n, r, d, iters, json=True)
+    if os.path.exists(new_file):
+        raise FileExistsError(f"File '{new_file}' already exists.")
+
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
     variables = [n, r, d]
@@ -466,13 +497,14 @@ def multi_run(n, r, d, iters):
     else:
         inputs = [[n, r, d, i] for i in range(iters)]
 
-    result = p.starmap(run, inputs)
+    path = os.getcwd().split("src")[0]
+    temp_file = f"{path}json_results/temp/"
+    if not os.path.exists(temp_file):
+        os.mkdir(temp_file)
 
-    with open(
-        file_namer(n, r, d, iters),
-        "wb",
-    ) as fp:
-        pickle.dump(result, fp)
+    p.starmap(run, inputs)
+
+    file_clean_up(temp_file, new_file)
 
 
 def main():
@@ -482,9 +514,9 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    multi_run(nrange(100, 7000, 100), 0.1, 2, 5)
-    # multi_run( 100, 0.1, 2, 100)
-    # run(100, 0.1, 2, 1, g=True)
+    multi_run(nrange(500, 1001, 5), 0.1, 2, 5)
+    # multi_run(99, 1, 2, 30)
+    # run(100, 0.3, 2, 1)
     print(time.time() - start)
 
 

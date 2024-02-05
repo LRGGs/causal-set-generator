@@ -1,12 +1,12 @@
 import matplotlib
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from src.analysis.utils import PATH_NAMES, read_pickle
+from src.analysis.utils import PATH_NAMES, read_file
 from src.utils import nrange
 import numpy as np
 from scipy.optimize import curve_fit
 
-# matplotlib.use("TkAgg")
+matplotlib.use("TkAgg")
 
 
 def length_of_paths_with_n(graphs):
@@ -34,11 +34,8 @@ def length_of_paths_with_n(graphs):
         params = [0.5, 1.7]
         popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
         error = np.sqrt(np.diag(pcov))
-        print(f"{popt[1]} * x ^ {popt[0]}")
-        print(f"error: {error}")
-
-        popt = np.polyfit(np.log(x_data), np.log(y_data), deg=1)
-        print(f"log(y) = {popt[0]} * log(x) + {popt[1]}")
+        print(popt)
+        print(error)
 
         plt.plot(x_data, [f(x, *popt) for x in x_data], label=f"{path} fit")
 
@@ -46,9 +43,7 @@ def length_of_paths_with_n(graphs):
     plt.title(f"Path Lengths Against Number of Nodes")
     plt.xlabel("Number of Nodes")
     plt.ylabel("Path Length")
-
     plt.show()
-
 
 def length_of_paths_with_interval(graphs):
     ns = []
@@ -57,17 +52,13 @@ def length_of_paths_with_interval(graphs):
         ns.append(len(graph["interval"]))
         for name in PATH_NAMES:
             path_lengths[name].append(len(graph["paths"][name]))
-
     for name in PATH_NAMES:
         plt.plot(ns, path_lengths[name], label=name)
-
     plt.legend()
     plt.title(f"Path Lengths Against Size of Interval")
     plt.xlabel("Length of Interval")
     plt.ylabel("Path Length")
-
     plt.show()
-
 
 def interval_node_discrepancy(graphs):
     ns, intervals = [], []
@@ -75,16 +66,14 @@ def interval_node_discrepancy(graphs):
         intervals.append(len(graph["interval"]))
         ns.append(len(graph["nodes"]))
     plt.plot(ns, [n - i for n, i in zip(ns, intervals)])
-
     plt.title(f"Difference Between Number of Nodes and Interval Size")
     plt.xlabel("Number of Nodes")
     plt.ylabel("Number of Nodes - Interval Size")
-
     plt.show()
 
 
 if __name__ == "__main__":
-    graphs = read_pickle(nrange(100, 7000, 100), 0.1, 2, 5)
+    graphs = read_file(nrange(100, 7000, 100), 2, 2, 5)
     length_of_paths_with_n(graphs)
     # length_of_paths_with_interval(graphs)
     # interval_node_discrepancy(graphs)
