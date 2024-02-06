@@ -415,7 +415,7 @@ class Graph:
     def to_dict(self):
         return {
             "n": len(self.nodes),
-            "nodes": [node.indx for node in self.nodes],
+            # "nodes": [node.to_dict() for node in self.nodes],
             # "order": [order.to_dict() for order in self.orders],
             "weight_collections": self.weight_collections(),
             # "paths": self.paths.to_dict(),
@@ -483,26 +483,26 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
 
 def multi_run(n, r, d, iters):
     new_file = file_namer(n, r, d, iters, json=True)
-    if os.path.exists(new_file):
-        raise FileExistsError(f"File '{new_file}' already exists.")
-
-    cpus = multiprocessing.cpu_count() - 1
-    p = multiprocessing.Pool(processes=cpus)
-    variables = [n, r, d]
-    if any(isinstance(i, list) for i in variables):
-        variables = [[i] if not isinstance(i, list) else i for i in variables]
-        variables = [list(i) for i in product(*variables)]
-        variables = variables * iters
-        inputs = [[*j, i] for i, j in enumerate(variables)]
-    else:
-        inputs = [[n, r, d, i] for i in range(iters)]
+    # if os.path.exists(new_file):
+    #     raise FileExistsError(f"File '{new_file}' already exists.")
+    #
+    # cpus = multiprocessing.cpu_count() - 1
+    # p = multiprocessing.Pool(processes=cpus)
+    # variables = [n, r, d]
+    # if any(isinstance(i, list) for i in variables):
+    #     variables = [[i] if not isinstance(i, list) else i for i in variables]
+    #     variables = [list(i) for i in product(*variables)]
+    #     variables = variables * iters
+    #     inputs = [[*j, i] for i, j in enumerate(variables)]
+    # else:
+    #     inputs = [[n, r, d, i] for i in range(iters)]
 
     path = os.getcwd().split("src")[0]
     temp_file = f"{path}json_results/temp/"
-    if not os.path.exists(temp_file):
-        os.mkdir(temp_file)
-
-    p.starmap(run, inputs)
+    # if not os.path.exists(temp_file):
+    #     os.mkdir(temp_file)
+    #
+    # p.starmap(run, inputs)
 
     file_clean_up(temp_file, new_file)
 
@@ -514,7 +514,7 @@ def main():
     # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    multi_run(nrange(500, 1001, 5), 0.1, 2, 5)
+    multi_run(nrange(1000, 10000, 50), 0.1, 2, 100)
     # multi_run(99, 1, 2, 30)
     # run(100, 0.3, 2, 1)
     print(time.time() - start)
