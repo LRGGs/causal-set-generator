@@ -83,7 +83,10 @@ class Network:
         """
         assert d == 2, "Unsupported Dimension (use d=2)"
 
-        self.df = pd.DataFrame()
+        self.t_poses = []
+        self.x_poses = []
+        self.children = []
+        self.parents = []
 
         self.n = int(n)
         self.r = r
@@ -108,31 +111,31 @@ class Network:
         unsort_poses = np.einsum("ij, kj -> ki", rotation, square_poses)
         poses = unsort_poses[unsort_poses[:, 0].argsort()]  # top sort
 
-        self.df["t_poses"] = poses[:, 0]
-        self.df["x_poses"] = poses[:, 1]
+        self.t_poses = poses[:, 0]
+        self.x_poses = poses[:, 1]
 
     def connect(self):
-        t = self.df.t_poses
-        x = self.df.x_poses
+        t = self.t_poses
+        x = self.x_poses
         p = np.dstack((t, x))[0].astype(np.float32)
         metric = self.metric.astype(np.float32)
 
         edges, children, parents = numba_edges(p, self.r, metric)
 
-        self.df["parents"] = parents
-        self.df["children"] = children
+        self.parents = parents
+        self.children = children
         self.edges = edges
 
     # DEPTH AND PATHS
 
     def length_of_longest(self):
         # Temporary memory holders (numpy faster than pandas)
-        children = self.df.children
-        parents = self.df.parents
+        children = self.children
+        parents = self.parents
         depths = np.zeros(self.n)
         n = self.n
-        t = self.df.t_poses
-        x = self.df.x_poses
+        t = self.t_poses
+        x = self.x_poses
         p = np.dstack((t, x))[0].astype(np.float32)
 
         # Assign depth by searching up from bottom node
