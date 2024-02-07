@@ -151,3 +151,4 @@ __pycache__/*
 
 # Profile file
 /src/profiler
+/json_results/

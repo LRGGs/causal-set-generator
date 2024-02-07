@@ -74,11 +74,14 @@ class Graph:
         d = time.time()
         self.greedy_path_euc()
         e = time.time()
+        self.greedy_path_min()
+        f = time.time()
         if timing:
             print(f"longest: {b - a}")
             print(f"shortest: {c - b}")
             print(f"random: {d - c}")
             print(f"greedy: {e - d}")
+            print(f"greedy: {f - e}")
 
     @property
     def node_x_positions(self):
@@ -356,7 +359,7 @@ class Graph:
             next_node = min(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
-        self.paths.greedy = path
+        self.paths.greedy_e = path
 
     def greedy_path_min(self):
         """
@@ -376,7 +379,7 @@ class Graph:
             next_node = max(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
-        self.paths.greedy = path
+        self.paths.greedy_m = path
 
     def path_positions(self, path="longest"):
         """
@@ -412,30 +415,24 @@ class Graph:
         cleaned_collections = numpy_to_list(collections)
         return cleaned_collections
 
-    def to_dict(self):
+    def paths_info(self):
+        paths = defaultdict(list)
+        for name, path in self.paths.to_dict().items():
+            nodes_in_path = sorted(list(set(itertools.chain(*path))))
+            paths[name] += [[float(pos) for pos in self.nodes[node].position] for node in nodes_in_path]
+        return paths
+
+    def to_weights_info(self):
         return {
             "n": len(self.nodes),
-            # "nodes": [node.to_dict() for node in self.nodes],
-            # "order": [order.to_dict() for order in self.orders],
             "weight_collections": self.weight_collections(),
-            # "paths": self.paths.to_dict(),
-            # "interval": self.connected_interval,
         }
 
-    def to_df(self):
-        orders = [order.order for order in self.orders]
-        data = {
-            "t_poses": [node.position[0] for node in self.nodes],
-            "x_poses": [node.position[1] for node in self.nodes],
-            "parents": [relative.parents for relative in self.relatives],
-            "children": [relative.children for relative in self.relatives],
-            "in_interval": [1 if i in self.connected_interval else 0 for i in range(self.n)],
-            "in_longest": [1 if i in self.paths.longest else 0 for i in range(self.n)],
-            "in_shortest": [1 if i in self.paths.shortest else 0 for i in range(self.n)],
-            "in_greedy": [1 if i in self.paths.greedy else 0 for i in range(self.n)],
-            "weight": [max(orders) - order for order in orders]
+    def to_angles_info(self):
+        return {
+            "n": len(self.nodes),
+            "paths": self.paths_info()
         }
-        return pd.DataFrame.from_dict(data)
 
 
 def run(n, r, d, i=1, p=False, g=False, m=False):
@@ -477,46 +474,44 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
     thread = multiprocessing.current_process().name
     path = os.getcwd().split("src")[0]
     filename = f"{path}/json_results/temp/{str(thread)}"
-    append_json_lines(filename, graph.to_dict())
+    dict_to_save = graph.to_angles_info()
+    append_json_lines(filename, dict_to_save)
     del graph
 
 
 def multi_run(n, r, d, iters):
     new_file = file_namer(n, r, d, iters, json=True)
-    # if os.path.exists(new_file):
-    #     raise FileExistsError(f"File '{new_file}' already exists.")
-    #
-    # cpus = multiprocessing.cpu_count() - 1
-    # p = multiprocessing.Pool(processes=cpus)
-    # variables = [n, r, d]
-    # if any(isinstance(i, list) for i in variables):
-    #     variables = [[i] if not isinstance(i, list) else i for i in variables]
-    #     variables = [list(i) for i in product(*variables)]
-    #     variables = variables * iters
-    #     inputs = [[*j, i] for i, j in enumerate(variables)]
-    # else:
-    #     inputs = [[n, r, d, i] for i in range(iters)]
+    if os.path.exists(new_file):
+        raise FileExistsError(f"File '{new_file}' already exists.")
+
+    cpus = multiprocessing.cpu_count() - 1
+    p = multiprocessing.Pool(processes=cpus)
+    variables = [n, r, d]
+    if any(isinstance(i, list) for i in variables):
+        variables = [[i] if not isinstance(i, list) else i for i in variables]
+        variables = [list(i) for i in product(*variables)]
+        variables = variables * iters
+        inputs = [[*j, i] for i, j in enumerate(variables)]
+    else:
+        inputs = [[n, r, d, i] for i in range(iters)]
 
     path = os.getcwd().split("src")[0]
     temp_file = f"{path}json_results/temp/"
-    # if not os.path.exists(temp_file):
-    #     os.mkdir(temp_file)
-    #
-    # p.starmap(run, inputs)
+    if not os.path.exists(temp_file):
+        os.mkdir(temp_file)
+
+    p.starmap(run, inputs)
 
     file_clean_up(temp_file, new_file)
 
 
 def main():
-    # import cProfile
-    # import pstats
-    # cProfile.run("run(20, 1, 2, i=1, p=False, m=False, g=False)", "profiler")
-    # pstats.Stats("profiler").strip_dirs().sort_stats("tottime").print_stats()
     start = time.time()
 
-    multi_run(nrange(1000, 10000, 50), 0.1, 2, 100)
+    multi_run(nrange(200, 10000, 50), 0.1, 2, 100)
     # multi_run(99, 1, 2, 30)
     # run(100, 0.3, 2, 1)
+
     print(time.time() - start)
 
 
