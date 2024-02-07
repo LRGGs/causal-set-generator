@@ -51,7 +51,5 @@ def length_of_paths_with_n(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
+    graphs = read_file(nrange(200, 10000, 25), 0.1, 2, 20)
     length_of_paths_with_n(graphs)
-    # length_of_paths_with_interval(graphs)
-    # interval_node_discrepancy(graphs)

@@ -16,6 +16,7 @@ from numba import njit
 from numba.typed import List
 import pandas as pd
 
+from analysis.utils import PATH_NAMES
 from mlogging.handler import update_status
 from utils import *
 
@@ -213,7 +214,7 @@ class Graph:
 
         dx = pos1 - pos0
 
-        return np.sqrt(dx @ dx)
+        return np.sqrt(dx[0]**2 + dx[1]**2)
 
     def proper_time(self, node_pair):
         return np.sqrt(-self.interval(node_pair))
@@ -284,17 +285,20 @@ class Graph:
         """
         path = []
         node = self.nodes[0]
+        max_order = max([order.order for order in self.orders])
         while node != self.nodes[-1]:
             current_depth = self.orders[node.indx].depth
             valid_children = [
-                int(child)
+                (int(child), abs(self.nodes[int(child)].position[1]))
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
-                   and self.orders[int(child)].depth == current_depth - 1
+                and self.orders[int(child)].depth == current_depth - 1
+                and self.orders[int(child)].order == max_order
             ]
-            next_node = random.choice(valid_children)
+            next_node = min(valid_children, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
+        print(set([self.orders[node[0]].order for node in path]))
         self.paths.longest = path
 
     def shortest_path(self):
@@ -359,6 +363,7 @@ class Graph:
             next_node = min(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
+        print(set([self.orders[node[0]].order for node in path]))
         self.paths.greedy_e = path
 
     def greedy_path_min(self):
@@ -419,7 +424,10 @@ class Graph:
         paths = defaultdict(list)
         for name, path in self.paths.to_dict().items():
             nodes_in_path = sorted(list(set(itertools.chain(*path))))
-            paths[name] += [[float(pos) for pos in self.nodes[node].position] for node in nodes_in_path]
+            paths[name] += [
+                [float(pos) for pos in self.nodes[node].position]
+                for node in nodes_in_path
+            ]
         return paths
 
     def to_weights_info(self):
@@ -429,10 +437,7 @@ class Graph:
         }
 
     def to_angles_info(self):
-        return {
-            "n": len(self.nodes),
-            "paths": self.paths_info()
-        }
+        return {"n": len(self.nodes), "paths": self.paths_info()}
 
 
 def run(n, r, d, i=1, p=False, g=False, m=False):
@@ -447,11 +452,11 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
     # update_status(i + 1, "green")
 
     if p:
-        print(graph.paths.longest)
-        print(graph.paths.shortest)
-        print(graph.paths.random)
-        print(graph.paths.greedy_m)
-        print(graph.paths.greedy_e)
+        print(f"longest ({len(graph.paths.longest)}: {graph.paths.longest}")
+        print(f"greedy_e ({len(graph.paths.greedy_e)}: {graph.paths.greedy_e}")
+        print(f"greedy_m ({len(graph.paths.greedy_m)}: {graph.paths.greedy_m}")
+        print(f"random ({len(graph.paths.random)}: {graph.paths.random}")
+        print(f"shortest ({len(graph.paths.shortest)}: {graph.paths.shortest}")
 
     if g:
         g = nx.DiGraph()
@@ -465,16 +470,21 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
 
     if m:
         graph.plot_nodes()
-        for i in ["longest", "shortest", "random", "greedy"]:
+        for i in PATH_NAMES:
             path = graph.path_positions(i)
             plt.plot(path[:, 1], path[:, 0], "o", label=i)
+        plt.xticks([-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
         plt.legend()
         plt.show()
 
     thread = multiprocessing.current_process().name
     path = os.getcwd().split("src")[0]
     filename = f"{path}/json_results/temp/{str(thread)}"
+
     dict_to_save = graph.to_angles_info()
+
     append_json_lines(filename, dict_to_save)
     del graph
 
@@ -508,9 +518,9 @@ def multi_run(n, r, d, iters):
 def main():
     start = time.time()
 
-    multi_run(nrange(200, 10000, 50), 0.1, 2, 100)
+    # multi_run(nrange(500, 5000, 15), 0.1, 2, 20)
     # multi_run(99, 1, 2, 30)
-    # run(100, 0.3, 2, 1)
+    run(2000, 0.1, 2, 1, m=True, p=True)
 
     print(time.time() - start)
 
