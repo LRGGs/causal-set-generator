@@ -4,72 +4,15 @@ from collections import defaultdict
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
 # matplotlib.use("TkAgg")
-import seaborn as sns
 from scipy.optimize import curve_fit
 from scipy.stats import ks_2samp
 
-from src.analysis.utils import PATH_NAMES, read_file
+from src.analysis.utils import read_file, calculate_reduced_chi2
 from src.utils import nrange
 
 
-def mean_distance_by_weight(order_collections, orders=10):
-    means = []
-    for graph in order_collections:
-        order_means = []
-        for i in range(orders):
-            order_means.append(np.sqrt(np.mean([node[1] ** 2 for node in graph[i]])))
-        means.append(order_means)
-    total_means = np.mean(means, axis=0)
-    total_stdvs = np.std(means, axis=0) / np.sqrt(len(means))
-    x_data, y_data, y_err = [i for i in range(orders)], total_means, total_stdvs
-    plt.errorbar(
-        x_data, y_data, yerr=y_err, ls="none", capsize=5, marker=".", label="mean sep"
-    )
-
-    popt = np.polyfit(x_data, y_data, deg=7)
-    print(popt)
-
-    plt.plot(x_data, np.poly1d(popt)(x_data), label="mean sep fit")
-
-    plt.legend()
-    plt.title(f"Mean Separation from Geodesic for the First {orders} Orders")
-    plt.xlabel("Order")
-    plt.ylabel("Mean Separation")
-
-    plt.show()
-
-
-def max_distance_by_weight(order_collections, orders=10):
-    means = []
-    for graph in order_collections:
-        order_means = []
-        for i in range(orders):
-            order_means.append(max([abs(node[1]) for node in graph[i]]))
-        means.append(order_means)
-    total_means = np.mean(means, axis=0)
-    total_stdvs = np.std(means, axis=0) / np.sqrt(len(means))
-    x_data, y_data, y_err = [i for i in range(orders)], total_means, total_stdvs
-    plt.errorbar(
-        x_data, y_data, yerr=y_err, ls="none", capsize=5, marker=".", label="max sep"
-    )
-
-    popt = np.polyfit(x_data, y_data, deg=7)
-    print(popt)
-
-    plt.plot(x_data, np.poly1d(popt)(x_data), label="max sep fit")
-
-    plt.legend()
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.title(f"Maximum Separation from Geodesic for the First {orders} Orders")
-    plt.xlabel("Order")
-    plt.ylabel("Maximum Separation")
-    plt.show()
-
-
-def weight_n_distance_heatmap(graphs):
+def full_weights_analysis(graphs):
     n_weight_seps = defaultdict(lambda: defaultdict(list))
     valid_weights = [i for i in range(100)]
     for graph in graphs:
@@ -88,23 +31,29 @@ def weight_n_distance_heatmap(graphs):
                 mean = np.mean(seps)
                 mean_vals[i].append(mean)
                 valid_n_weight_mean_sep_errs[n][w].append(mean)
-                valid_n_weight_mean_sep_errs[n][w].append(np.std(seps)/np.sqrt(len(seps)))
+                valid_n_weight_mean_sep_errs[n][w].append(
+                    np.std(seps) / np.sqrt(len(seps))
+                )
     ns = list(valid_n_weight_mean_sep_errs.keys())
-    select_ns = list(valid_n_weight_mean_sep_errs.keys())[0::int(len(valid_n_weight_mean_sep_errs.keys())/10)]
+    select_ns = list(valid_n_weight_mean_sep_errs.keys())[
+        0 :: int(len(valid_n_weight_mean_sep_errs.keys()) / 10)
+    ]
     valid_weights = [i for i in range(max_weight + 1)]
 
     min_y, max_y = float(min(ns)), float(max(ns))
     min_x, max_x = 0.0, float(max_weight)
     plt.figure(figsize=(5, 9))
-    plt.imshow(np.flip(mean_vals, axis=0), extent=(min_x, max_x, min_y, max_y), aspect=0.01)
+    plt.imshow(
+        np.flip(mean_vals, axis=0), extent=(min_x, max_x, min_y, max_y), aspect=0.01
+    )
     plt.xlabel("Weight")
     plt.ylabel("Number of Nodes")
     colorbar = plt.colorbar()
-    colorbar.set_label('Mean Separation From Geodesic')
+    colorbar.set_label("Mean Separation From Geodesic")
     plt.show()
 
     def f(x, a, b):
-        return a * x ** b
+        return a * x**b
 
     As = []
     Bs = []
@@ -113,15 +62,28 @@ def weight_n_distance_heatmap(graphs):
         mean_seps = [v[i][0] for v in valid_n_weight_mean_sep_errs.values()]
         mean_sep_errs = [v[i][1] for v in valid_n_weight_mean_sep_errs.values()]
         params = [-1, 1]
-        popt, pcov = curve_fit(f=f, xdata=ns, ydata=mean_seps, p0=params, sigma=mean_sep_errs)
+        popt, pcov = curve_fit(
+            f=f, xdata=ns, ydata=mean_seps, p0=params, sigma=mean_sep_errs
+        )
         error = np.sqrt(np.diag(pcov))
         As.append(popt[0])
         Bs.append(popt[1])
 
-        if i == 0 or i == max_weight-1:
+        if i == 0 or i == max_weight - 1:
             print(f"weight {i}: ({popt[0]}+-{error[0]}) * N ^ ({popt[1]}+-{error[1]})")
-            plt.errorbar(ns, mean_seps, yerr=mean_sep_errs, ls="none", capsize=5, marker=".", label="data")
-            plt.plot(ns, [f(n, *popt) for n in ns], label="fit")
+            plt.errorbar(
+                ns,
+                mean_seps,
+                yerr=mean_sep_errs,
+                ls="none",
+                capsize=5,
+                marker=".",
+                label="data",
+            )
+            y_fit = [f(n, *popt) for n in ns]
+            plt.plot(ns, y_fit, label="fit")
+            red_chi = calculate_reduced_chi2(np.array(mean_seps), np.array(y_fit), np.array(mean_sep_errs))
+            print(f"reduced chi^2 value of: {red_chi} for weight: {i}")
             plt.xlabel("Number of Nodes")
             plt.ylabel(f"Mean Separation from Geodesic for Weight {i}")
             plt.show()
@@ -148,32 +110,61 @@ def weight_n_distance_heatmap(graphs):
     for n, weights_dict in n_weight_seps.items():
         for w, seps in weights_dict.items():
             if w in valid_weights:
-                collapsed_seps = np.array(seps)/f(n, As[-1], Bs[-1])
-                n_collapsed_valid_weight_mean_sep_errs[n][w].append(np.mean(collapsed_seps))
+                collapsed_seps = np.array(seps) / f(n, As[-1], Bs[-1])
+                n_collapsed_valid_weight_mean_sep_errs[n][w].append(
+                    np.mean(collapsed_seps)
+                )
                 collapsed_valid_weight_seps[w] += list(collapsed_seps)
-                n_collapsed_valid_weight_mean_sep_errs[n][w].append(np.std(collapsed_seps)/np.sqrt(len(collapsed_seps)))
+                n_collapsed_valid_weight_mean_sep_errs[n][w].append(
+                    np.std(collapsed_seps) / np.sqrt(len(collapsed_seps))
+                )
         if n in select_ns:
-            collapsed_seps = [mean_sep_err[0] for mean_sep_err in n_collapsed_valid_weight_mean_sep_errs[n].values()]
+            collapsed_seps = [
+                mean_sep_err[0]
+                for mean_sep_err in n_collapsed_valid_weight_mean_sep_errs[n].values()
+            ]
             plt.plot(valid_weights, collapsed_seps, ls="none", marker=".", label=n)
     plt.legend()
     plt.xlabel("weight")
-    plt.ylabel(f"mean separation from geodesic normalised by {As[-1]} * e ^ {Bs[-1]}")
+    plt.ylabel(f"mean separation from geodesic normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
     plt.show()
 
-    collapsed_mean_seps = [np.mean(weight_seps) for weight_seps in collapsed_valid_weight_seps.values()]
-    collapsed_mean_sep_errs = [np.std(weight_seps)/np.sqrt(len(weight_seps)) for weight_seps in collapsed_valid_weight_seps.values()]
-    plt.errorbar(valid_weights, collapsed_mean_seps, collapsed_mean_sep_errs, ls="none", marker="x", capsize=5, label="data")
+    collapsed_mean_seps = [
+        np.mean(weight_seps) for weight_seps in collapsed_valid_weight_seps.values()
+    ]
+    collapsed_mean_sep_errs = [
+        np.std(weight_seps) / np.sqrt(len(weight_seps))
+        for weight_seps in collapsed_valid_weight_seps.values()
+    ]
+    plt.errorbar(
+        valid_weights,
+        collapsed_mean_seps,
+        collapsed_mean_sep_errs,
+        ls="none",
+        marker="x",
+        capsize=5,
+        label="data",
+    )
     popt = np.polyfit(valid_weights, collapsed_mean_seps, deg=7)
     print(f"seventh order polynomial with with constants: {popt}")
-    plt.plot(valid_weights, np.poly1d(popt)(valid_weights), label="fit")
+    y_fit = np.poly1d(popt)(valid_weights)
+    red_chi = calculate_reduced_chi2(np.array(collapsed_mean_seps), np.array(y_fit), np.array(collapsed_mean_sep_errs))
+    print(f"reduced chi^2 value of: {red_chi} for collapsed weight separations")
+    plt.plot(valid_weights, y_fit, label="fit")
     plt.legend()
     plt.xlabel("weight")
-    plt.ylabel(f"mean separation from geodesic normalised by {As[-1]} * e ^ {Bs[-1]}")
+    plt.ylabel(f"mean separation from geodesic normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
     plt.show()
 
     results = []
     passed = 0
-    for dataset1, dataset2 in itertools.combinations([[mean_sep_errs[0] for mean_sep_errs in weight_mean_sep_errs.values()] for weight_mean_sep_errs in n_collapsed_valid_weight_mean_sep_errs.values()], 2):
+    for dataset1, dataset2 in itertools.combinations(
+        [
+            [mean_sep_errs[0] for mean_sep_errs in weight_mean_sep_errs.values()]
+            for weight_mean_sep_errs in n_collapsed_valid_weight_mean_sep_errs.values()
+        ],
+        2,
+    ):
         _, p_value = ks_2samp(dataset1, dataset2)
         results.append(p_value)
         if p_value > 0.999:
@@ -205,5 +196,5 @@ if __name__ == "__main__":
     # mean_distance_by_weight(order_collections, 50)
     # max_distance_by_weight(order_collections, 50)
 
-    graphs = read_file(nrange(1000, 10000, 50), 0.1, 2, 100)
-    weight_n_distance_heatmap(graphs)
+    graphs = read_file(nrange(1000, 10000, 50), 0.1, 2, 100, extra="weights")
+    full_weights_analysis(graphs)
