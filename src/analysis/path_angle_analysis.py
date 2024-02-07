@@ -57,9 +57,5 @@ def mean_angular_deviations_per_path_per_n(graphs):
 
 
 if __name__ == "__main__":
-    # graphs = read_pickle(10000, 0.5, 2, 100)
-    # mean_deviation_by_path(graphs)
-    # greatest_deviation_by_path(graphs)
-
     graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
     mean_angular_deviations_per_path_per_n(graphs)

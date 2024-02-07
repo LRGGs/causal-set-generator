@@ -37,7 +37,7 @@ def length_of_paths_with_n(graphs):
             params = [1.7, 0.5]
             popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
             error = np.sqrt(np.diag(pcov))
-            print(f"y = {popt[0]}+-{pcov[0]} * x ** {popt[1]}+-{pcov[1]}")
+            print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
             y_fit = [f(x, *popt) for x in x_data]
             plt.plot(x_data, y_fit, label=f"{path} fit")
             red_chi = calculate_reduced_chi2(np.array(y_data), np.array(y_fit), np.array(y_err))
@@ -47,34 +47,6 @@ def length_of_paths_with_n(graphs):
     plt.title(f"Path Lengths Against Number of Nodes")
     plt.xlabel("Number of Nodes")
     plt.ylabel("Path Length")
-    plt.show()
-
-
-def length_of_paths_with_interval(graphs):
-    ns = []
-    path_lengths = {name: [] for name in PATH_NAMES}
-    for graph in graphs:
-        ns.append(len(graph["interval"]))
-        for name in PATH_NAMES:
-            path_lengths[name].append(len(graph["paths"][name]))
-    for name in PATH_NAMES:
-        plt.plot(ns, path_lengths[name], label=name)
-    plt.legend()
-    plt.title(f"Path Lengths Against Size of Interval")
-    plt.xlabel("Length of Interval")
-    plt.ylabel("Path Length")
-    plt.show()
-
-
-def interval_node_discrepancy(graphs):
-    ns, intervals = [], []
-    for graph in graphs:
-        intervals.append(len(graph["interval"]))
-        ns.append(len(graph["nodes"]))
-    plt.plot(ns, [n - i for n, i in zip(ns, intervals)])
-    plt.title(f"Difference Between Number of Nodes and Interval Size")
-    plt.xlabel("Number of Nodes")
-    plt.ylabel("Number of Nodes - Interval Size")
     plt.show()
 
 
