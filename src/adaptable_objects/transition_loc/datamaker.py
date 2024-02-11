@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from utils import file_namer
 import matplotlib
 
-def find_crit_r(n, r_range=np.linspace(0.0, 1.0, 100001), num_trials=100):
+def find_crit_r(n, r_range=np.linspace(0.0, 1.0, 100001), num_trials=250):
     if n <= 200:
         r_range = r_range[int(r_range.shape[0] * 39 / 1001):]
     elif n <= 300:
@@ -16,7 +16,9 @@ def find_crit_r(n, r_range=np.linspace(0.0, 1.0, 100001), num_trials=100):
         r_range = r_range[int(r_range.shape[0] * 21 / 1001):]
     elif n <= 1000:
         r_range = r_range[int(r_range.shape[0] * 16 / 1001):]
-    for r in tqdm(r_range):
+    trans_range = []
+    in_trans = False
+    for r in r_range:
         con_prob = 0
         for trial in range(num_trials):
             try:
@@ -29,17 +31,23 @@ def find_crit_r(n, r_range=np.linspace(0.0, 1.0, 100001), num_trials=100):
             except IndexError:
                 pass
         con_prob /= num_trials
-        if con_prob > 0.5:
-            return r
+        if con_prob > 0.1 and not in_trans:
+            trans_range.append(r)
+            in_trans = True
+        if con_prob > 0.9:
+            trans_range.append(r)
+            if len(trans_range) == 1:
+                trans_range = [trans_range[0], trans_range[0]]
+            return trans_range
 
 
 if __name__ == '__main__':
 
     d = 2
     n_range = range(100, 1001, 50)
-    num_trials = 100
+    num_trials = 250
 
-    n_experiments = 10
+    n_experiments = 20
     for experiment in tqdm(range(n_experiments)):
 
         cpus = multiprocessing.cpu_count() - 1
