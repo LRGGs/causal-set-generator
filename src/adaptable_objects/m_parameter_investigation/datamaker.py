@@ -16,17 +16,17 @@ if __name__ == '__main__':
     multiprocessing.set_start_method("forkserver")
 
     n_experiments = 10  # number of times we measure with the same parameters
-    n_range = [n for n in range(100, 15001, 100)]
+    n_range = [n for n in range(100, 101, 100)]
     r = 2
     d = 2
 
     for experiment in tqdm(range(n_experiments)):
         # Run in parallel for different inputs
 
-        cpus = multiprocessing.cpu_count() - 5
+        cpus = multiprocessing.cpu_count() - 4
         p = multiprocessing.Pool(processes=cpus)
 
-        results = p.map(run, n_range, 10)  # multiprocess different n
+        results = p.map(run, n_range, 50)  # multiprocess different n
         print(results)
 
         with open(file_namer(n_range, r, d, experiment), "wb") as fp:
