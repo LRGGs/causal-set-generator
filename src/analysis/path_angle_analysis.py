@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_file, fit_expo, fit_inv_poly, fit_linear
+from src.analysis.utils import PATH_NAMES, read_file, fit_expo, fit_inv_poly, fit_linear, fit_expo_poly
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")
@@ -51,9 +51,11 @@ def mean_angular_deviations_per_path_per_n(graphs):
                 label=path_name,
             )
 
-            # fit_expo(x_data, y_data, y_err, path_name, params=[0.5, 0.002])
-            # fit_inv_poly(x_data, y_data, y_err, path_name, params=[1, 0, 0])
-            fit_linear(x_data, y_data, y_err, path_name, params=[0.5])
+            if path_name == "greedy_o":
+                fit_expo(x_data, y_data, y_err, path_name, params=[0.5, 0.002])
+            # fit_inv_poly(x_data, y_data, y_err, path_name, params=[0, 0, 1])
+            else:
+                fit_linear(x_data, y_data, y_err, path_name, params=[0.5])
 
     plt.legend()
     plt.xlabel("Number of Nodes")
@@ -62,5 +64,5 @@ def mean_angular_deviations_per_path_per_n(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
+    graphs = read_file(nrange(500, 5000, 20), 0.1, 2, 100)
     mean_angular_deviations_per_path_per_n(graphs)

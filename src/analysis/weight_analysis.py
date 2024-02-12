@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import ks_2samp
 
-from src.analysis.utils import read_file, calculate_reduced_chi2
+from src.analysis.utils import read_file, calculate_reduced_chi2, expo
 from src.utils import nrange
 
 
@@ -53,9 +53,6 @@ def full_weights_analysis(graphs):
     plt.title("Mean Separation of Nodes from the Geodesic\n by N and Weight")
     plt.show()
 
-    def f(x, a, b):
-        return a * x**b
-
     As = []
     Bs = []
     Ws = list(range(max_weight))
@@ -64,7 +61,7 @@ def full_weights_analysis(graphs):
         mean_sep_errs = [v[i][1] for v in valid_n_weight_mean_sep_errs.values()]
         params = [-1, 1]
         popt, pcov = curve_fit(
-            f=f, xdata=ns, ydata=mean_seps, p0=params, sigma=mean_sep_errs
+            f=expo, xdata=ns, ydata=mean_seps, p0=params, sigma=mean_sep_errs
         )
         error = np.sqrt(np.diag(pcov))
         As.append(popt[0])
@@ -82,15 +79,13 @@ def full_weights_analysis(graphs):
                 marker=".",
                 label="data",
             )
-            y_fit = [f(n, *popt) for n in ns]
+            y_fit = [expo(n, *popt) for n in ns]
             axs[0].plot(ns, y_fit, label="fit")
+            axs[0].set(title=f"Mean Separation from Geodesic for Weight {i}", xlabel="Number of Nodes", ylabel=f"Mean Separation")
             red_chi = calculate_reduced_chi2(np.array(mean_seps), np.array(y_fit), np.array(mean_sep_errs))
             print(f"reduced chi^2 value of: {red_chi} for weight: {i}")
-            plt.xlabel("Number of Nodes")
-            axs[1].plot()
-            axs[1].set()
-            plt.title(f"Mean Separation from Geodesic for Weight {i}")
-            plt.ylabel(f"Mean Separation")
+            axs[1].plot(ns, np.array(mean_seps)-np.array(y_fit))
+            axs[1].set(xlabel="Number of Nodes", ylabel=f"Residuals")
             plt.show()
 
     plt.plot(Ws, As, label="Factor: a")
@@ -102,13 +97,13 @@ def full_weights_analysis(graphs):
     plt.show()
 
     for n, weights_dict in valid_n_weight_mean_sep_errs.items():
-        collapsed_seps = [mean_sep_err[0] for mean_sep_err in weights_dict.values()]
+        mean_seps = [mean_sep_err[0] for mean_sep_err in weights_dict.values()]
         if n in select_ns:
-            plt.plot(valid_weights, collapsed_seps, ls="none", marker=".", label=n)
+            plt.plot(valid_weights, mean_seps, ls="none", marker=".", label=n)
     plt.legend()
     plt.xlabel("Weight")
     plt.ylabel(f"Mean Separation")
-    # plt.title("Mean Separation from Geodesic Collapsed Across N")
+    plt.title("Mean Separation from Geodesic for Varying N")
     plt.show()
 
     n_collapsed_valid_weight_mean_sep_errs = defaultdict(lambda: defaultdict(list))
@@ -116,25 +111,25 @@ def full_weights_analysis(graphs):
     for n, weights_dict in n_weight_seps.items():
         for w, seps in weights_dict.items():
             if w in valid_weights:
-                collapsed_seps = np.array(seps) / f(n, As[-1], Bs[-1])
+                mean_seps = np.array(seps) / expo(n, As[-1], Bs[-1])
                 n_collapsed_valid_weight_mean_sep_errs[n][w].append(
-                    np.mean(collapsed_seps)
+                    np.mean(mean_seps)
                 )
-                collapsed_valid_weight_seps[w] += list(collapsed_seps)
+                collapsed_valid_weight_seps[w] += list(mean_seps)
                 n_collapsed_valid_weight_mean_sep_errs[n][w].append(
-                    np.std(collapsed_seps) / np.sqrt(len(collapsed_seps))
+                    np.std(mean_seps) / np.sqrt(len(mean_seps))
                 )
         if n in select_ns:
-            collapsed_seps = [
+            mean_seps = [
                 mean_sep_err[0]
                 for mean_sep_err in n_collapsed_valid_weight_mean_sep_errs[n].values()
             ]
-            plt.plot(valid_weights, collapsed_seps, ls="none", marker=".", label=n)
+            plt.plot(valid_weights, mean_seps, ls="none", marker=".", label=n)
     plt.legend()
     plt.xlabel("Weight")
     plt.ylabel("Mean Separation")
     plt.title(f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
-    # plt.show()
+    plt.show()
 
     collapsed_mean_seps = [
         np.mean(weight_seps) for weight_seps in collapsed_valid_weight_seps.values()
@@ -160,7 +155,8 @@ def full_weights_analysis(graphs):
     plt.plot(valid_weights, y_fit, label="fit")
     plt.legend()
     plt.xlabel("weight")
-    plt.ylabel(f"mean separation from geodesic normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
+    plt.ylabel(f"mean separation")
+    plt.title(f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
     plt.show()
 
     results = []

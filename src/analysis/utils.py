@@ -8,7 +8,7 @@ from scipy.optimize import curve_fit
 
 from src.utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", "greedy_m", "random", "shortest"]
+PATH_NAMES = ["longest", "greedy_e", "greedy_m","greedy_o", "random", "shortest"]
 
 
 def expo(x, a, b):
@@ -19,7 +19,7 @@ def inv_poly(x, a, b, c):
     return a + (b / x) + (c / x ** 2)
 
 
-def expo_poly(x, a, b, c, d, e):
+def expo_inv_poly(x, a, b, c, d, e):
     return (a * x ** b) * (c + (d / x) + (e / x ** 2))
 
 
@@ -28,7 +28,7 @@ def linear(x, a):
 
 
 def fit_expo(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e"]:
+    if path in ["longest", "greedy_e", "greedy_o"]:
         params = params if params is not None else [1.7, 0.5]
         popt, pcov = curve_fit(f=expo, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
         error = np.sqrt(np.diag(pcov))
@@ -40,7 +40,7 @@ def fit_expo(x_data, y_data, y_err, path, params=None):
 
 
 def fit_inv_poly(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e"]:
+    if path in ["longest", "greedy_e", "greedy_o"]:
         params = params if params is not None else [1, 0, 0]
         popt, pcov = curve_fit(f=inv_poly, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
         error = np.sqrt(np.diag(pcov))
@@ -52,19 +52,19 @@ def fit_inv_poly(x_data, y_data, y_err, path, params=None):
 
 
 def fit_expo_poly(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e"]:
+    if path in ["longest", "greedy_e", "greedy_o"]:
         params = params if params is not None else [1, 0, 0, 0, 0]
-        popt, pcov = curve_fit(f=expo_poly, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
+        popt, pcov = curve_fit(f=expo_inv_poly, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
         error = np.sqrt(np.diag(pcov))
         print(f"y = ({popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]})*({popt[2]}+-{error[2]} + {popt[3]}+-{error[3]}/x + {popt[4]}+-{error[4]}/x^2)")
-        y_fit = [expo_poly(x, *popt) for x in x_data]
+        y_fit = [expo_inv_poly(x, *popt) for x in x_data]
         plt.plot(x_data, y_fit, label=f"{path} fit")
         red_chi = calculate_reduced_chi2(np.array(y_data), np.array(y_fit), np.array(y_err))
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
 
 
 def fit_linear(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e"]:
+    if path in ["longest", "greedy_e", "greedy_o"]:
         params = params if params is not None else [1]
         popt, pcov = curve_fit(f=linear, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
         error = np.sqrt(np.diag(pcov))

@@ -155,6 +155,7 @@ class Paths:
     longest: list
     greedy_e: list
     greedy_m: list
+    greedy_o: list
     random: list
     shortest: list
 
@@ -163,6 +164,7 @@ class Paths:
             "longest": self.longest,
             "greedy_e": self.greedy_e,
             "greedy_m": self.greedy_m,
+            "greedy_o": self.greedy_o,
             "random": self.random,
             "shortest": self.shortest,
         }

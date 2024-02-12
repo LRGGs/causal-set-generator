@@ -46,7 +46,7 @@ class Graph:
         identity = np.identity(n=self.d, dtype=np.float32)
         identity[0][0] *= -1
         self.minkowski_metric = identity
-        self.paths = Paths([], [], [], [], [])
+        self.paths = Paths([], [], [], [], [], [])
         self.connected_interval = []
 
     def configure_graph(self, timing=False):
@@ -77,12 +77,15 @@ class Graph:
         e = time.time()
         self.greedy_path_min()
         f = time.time()
+        self.greedy_path_opt()
+        g = time.time()
         if timing:
             print(f"longest: {b - a}")
             print(f"shortest: {c - b}")
             print(f"random: {d - c}")
             print(f"greedy: {e - d}")
-            print(f"greedy: {f - e}")
+            print(f"minkovski: {f - e}")
+            print(f"optimum: {g - f}")
 
     @property
     def node_x_positions(self):
@@ -298,7 +301,6 @@ class Graph:
             next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
-        print(set([self.orders[node[0]].order for node in path]))
         self.paths.longest = path
 
     def shortest_path(self):
@@ -363,7 +365,6 @@ class Graph:
             next_node = min(child_intervals, key=lambda l: l[1])[0]
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
-        print(set([self.orders[node[0]].order for node in path]))
         self.paths.greedy_e = path
 
     def greedy_path_min(self):
@@ -385,6 +386,26 @@ class Graph:
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
         self.paths.greedy_m = path
+
+    def greedy_path_opt(self):
+        """
+        Run this only after finding the order. Choose the next
+        node at each step as the node with the largest interval.
+        Returns:
+            greedy path list of edges
+        """
+        path = []
+        node = self.nodes[0]
+        while node != self.nodes[-1]:
+            child_intervals = [
+                (int(child), abs(self.nodes[int(child)].position[1]))
+                for child in self.relatives[node.indx].children
+                if int(child) in self.connected_interval
+            ]
+            next_node = min(child_intervals, key=lambda l: l[1])[0]
+            path.append((node.indx, next_node))
+            node = self.nodes[next_node]
+        self.paths.greedy_o = path
 
     def path_positions(self, path="longest"):
         """
@@ -440,7 +461,7 @@ class Graph:
         return {"n": len(self.nodes), "paths": self.paths_info()}
 
 
-def run(n, r, d, i=1, p=False, g=False, m=False):
+def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
     # update_status(i + 1, "yellow")
@@ -462,11 +483,22 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
         g = nx.DiGraph()
         g.add_nodes_from(range(n))
         g.add_edges_from(graph.edges)
+        color_map = []
+        longest = sorted(list(set(itertools.chain(*graph.paths.longest))))
+        shortest = sorted(list(set(itertools.chain(*graph.paths.shortest))))
+        for node in graph.nodes:
+            if node.indx in [0, len(graph.nodes)-1]:
+                color_map.append('red')
+            elif node.indx in longest:
+                color_map.append('green')
+            elif node.indx in shortest:
+                color_map.append('yellow')
+            else:
+                color_map.append('cyan')
         nx.draw(
-            g, [(n.position[1], n.position[0]) for n in graph.nodes], with_labels=True
+            g, [(n.position[1], n.position[0]) for n in graph.nodes], node_color=color_map, with_labels=True
         )
-        plt.savefig("../images/network")
-        plt.clf()
+        plt.show()
 
     if m:
         graph.plot_nodes()
@@ -479,14 +511,17 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
         plt.legend()
         plt.show()
 
-    thread = multiprocessing.current_process().name
-    path = os.getcwd().split("src")[0]
-    filename = f"{path}/json_results/temp/{str(thread)}"
+    if j:
+        thread = multiprocessing.current_process().name
+        path = os.getcwd().split("src")[0]
+        filename = f"{path}/json_results/temp/{str(thread)}"
 
-    dict_to_save = graph.to_paths_info()
+        dict_to_save = graph.to_paths_info()
 
-    append_json_lines(filename, dict_to_save)
-    del graph
+        append_json_lines(filename, dict_to_save)
+        del graph
+    else:
+        return graph
 
 
 def multi_run(n, r, d, iters):
@@ -510,6 +545,7 @@ def multi_run(n, r, d, iters):
     if not os.path.exists(temp_file):
         os.mkdir(temp_file)
 
+    inputs = sorted(inputs, key=lambda i: i[-1], reverse=True)
     p.starmap(run, inputs)
 
     file_clean_up(temp_file, new_file)
@@ -518,9 +554,9 @@ def multi_run(n, r, d, iters):
 def main():
     start = time.time()
 
-    # multi_run(nrange(500, 5000, 15), 0.1, 2, 20)
+    # multi_run(nrange(500, 5000, 20), 0.1, 2, 100)
     # multi_run(99, 1, 2, 30)
-    run(3000, 0.1, 2, 1, m=True, p=True)
+    run(50, 0.2, 2, 1, g=True, j=False)
 
     print(time.time() - start)
 
