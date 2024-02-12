@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_file
+from src.analysis.utils import PATH_NAMES, read_file, fit_expo, fit_expo_poly
 from src.utils import nrange
 
 
@@ -16,7 +16,8 @@ def separation_from_geodesic_by_path(graphs):
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
         for graph in graphs:
-            n_seps[graph["n"]] += [abs(pos[1]) for pos in graph["paths"][path]]
+            n_seps[graph["n"]].append(np.mean([abs(pos[1]) for pos in graph["paths"][path]]))
+            # n_seps[graph["n"]] += [abs(pos[1]) for pos in graph["paths"][path]]
 
         x_data = list(n_seps.keys())
         y_data = [np.mean(v) for v in n_seps.values()]
@@ -31,18 +32,8 @@ def separation_from_geodesic_by_path(graphs):
             label=path,
         )
 
-        # def f(x, a, b):
-        #     return a * x ** b
-        #
-        # if path in ["longest", "greedy_e"]:
-        #     params = [1.7, 0.5]
-        #     popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
-        #     error = np.sqrt(np.diag(pcov))
-        #     print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
-        #     y_fit = [f(x, *popt) for x in x_data]
-        #     plt.plot(x_data, y_fit, label=f"{path} fit")
-        #     red_chi = calculate_reduced_chi2(np.array(y_data), np.array(y_fit), np.array(y_err))
-        #     print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+        fit_expo(x_data, y_data, y_err, path, params=[0.2, -0.2])
+        # fit_expo_poly(x_data, y_data, y_err, path, params=[0.2, -0.2, 1, 0, 0])
 
     plt.legend()
     plt.title(f"Mean Separation from Geodesic Per Path")
@@ -68,18 +59,8 @@ def separation_from_geodesic_by_path(graphs):
             label=path,
         )
 
-        # def f(x, a, b):
-        #     return a * x ** b
-        #
-        # if path in ["longest", "greedy_e"]:
-        #     params = [1.7, 0.5]
-        #     popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
-        #     error = np.sqrt(np.diag(pcov))
-        #     print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
-        #     y_fit = [f(x, *popt) for x in x_data]
-        #     plt.plot(x_data, y_fit, label=f"{path} fit")
-        #     red_chi = calculate_reduced_chi2(np.array(y_data), np.array(y_fit), np.array(y_err))
-        #     print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+        fit_expo(x_data, y_data, y_err, path, params=[0.4, -0.2])
+        # fit_expo_poly(x_data, y_data, y_err, path, params=[0.4, -0.2, 1, 0, 0])
 
     plt.legend()
     plt.title(f"Max Separation from Geodesic Per Path")

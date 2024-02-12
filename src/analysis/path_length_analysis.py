@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_file, calculate_reduced_chi2
+from src.analysis.utils import PATH_NAMES, read_file, calculate_reduced_chi2, fit_expo
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")
@@ -30,18 +30,7 @@ def length_of_paths_with_n(graphs):
             label=path,
         )
 
-        def f(x, a, b):
-            return a * x ** b
-
-        if path in ["longest", "greedy_e"]:
-            params = [1.7, 0.5]
-            popt, pcov = curve_fit(f=f, xdata=x_data, ydata=y_data, p0=params, sigma=y_err)
-            error = np.sqrt(np.diag(pcov))
-            print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
-            y_fit = [f(x, *popt) for x in x_data]
-            plt.plot(x_data, y_fit, label=f"{path} fit")
-            red_chi = calculate_reduced_chi2(np.array(y_data), np.array(y_fit), np.array(y_err))
-            print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+        fit_expo(x_data, y_data, y_err, path, params=[1.7, 0.5])
 
     plt.legend()
     plt.title(f"Path Lengths Against Number of Nodes")
