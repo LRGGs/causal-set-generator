@@ -289,13 +289,13 @@ class Graph:
         while node != self.nodes[-1]:
             current_depth = self.orders[node.indx].depth
             valid_children = [
-                (int(child), abs(self.nodes[int(child)].position[1]))
+                int(child)
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
                 and self.orders[int(child)].depth == current_depth - 1
                 and self.orders[int(child)].order == max_order
             ]
-            next_node = min(valid_children, key=lambda l: l[1])[0]
+            next_node = random.choice(valid_children)
             path.append((node.indx, next_node))
             node = self.nodes[next_node]
         print(set([self.orders[node[0]].order for node in path]))
@@ -436,7 +436,7 @@ class Graph:
             "weight_collections": self.weight_collections(),
         }
 
-    def to_angles_info(self):
+    def to_paths_info(self):
         return {"n": len(self.nodes), "paths": self.paths_info()}
 
 
@@ -483,7 +483,7 @@ def run(n, r, d, i=1, p=False, g=False, m=False):
     path = os.getcwd().split("src")[0]
     filename = f"{path}/json_results/temp/{str(thread)}"
 
-    dict_to_save = graph.to_angles_info()
+    dict_to_save = graph.to_paths_info()
 
     append_json_lines(filename, dict_to_save)
     del graph
@@ -520,7 +520,7 @@ def main():
 
     # multi_run(nrange(500, 5000, 15), 0.1, 2, 20)
     # multi_run(99, 1, 2, 30)
-    run(2000, 0.1, 2, 1, m=True, p=True)
+    run(3000, 0.1, 2, 1, m=True, p=True)
 
     print(time.time() - start)
 

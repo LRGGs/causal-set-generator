@@ -24,7 +24,7 @@ def angle_between(v1, v2):
 
 def mean_angular_deviations_per_path_per_n(graphs):
     for path_name in PATH_NAMES:
-        if path_name not in ["shortestx", "randomx"]:
+        if path_name not in ["shortestx", "randomx", "greedy_mx"]:
             n_angles = defaultdict(list)
             n_errors = defaultdict(list)
             for graph in graphs:

@@ -51,5 +51,5 @@ def length_of_paths_with_n(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_file(nrange(200, 10000, 25), 0.1, 2, 20)
+    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
     length_of_paths_with_n(graphs)
