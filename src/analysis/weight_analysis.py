@@ -4,6 +4,7 @@ from collections import defaultdict
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
 # matplotlib.use("TkAgg")
 from scipy.optimize import curve_fit
 from scipy.stats import ks_2samp
@@ -81,10 +82,16 @@ def full_weights_analysis(graphs):
             )
             y_fit = [expo(n, *popt) for n in ns]
             axs[0].plot(ns, y_fit, label="fit")
-            axs[0].set(title=f"Mean Separation from Geodesic for Weight {i}", xlabel="Number of Nodes", ylabel=f"Mean Separation")
-            red_chi = calculate_reduced_chi2(np.array(mean_seps), np.array(y_fit), np.array(mean_sep_errs))
+            axs[0].set(
+                title=f"Mean Separation from Geodesic for Weight {i}",
+                xlabel="Number of Nodes",
+                ylabel=f"Mean Separation",
+            )
+            red_chi = calculate_reduced_chi2(
+                np.array(mean_seps), np.array(y_fit), np.array(mean_sep_errs)
+            )
             print(f"reduced chi^2 value of: {red_chi} for weight: {i}")
-            axs[1].plot(ns, np.array(mean_seps)-np.array(y_fit))
+            axs[1].plot(ns, np.array(mean_seps) - np.array(y_fit))
             axs[1].set(xlabel="Number of Nodes", ylabel=f"Residuals")
             plt.show()
 
@@ -112,9 +119,7 @@ def full_weights_analysis(graphs):
         for w, seps in weights_dict.items():
             if w in valid_weights:
                 mean_seps = np.array(seps) / expo(n, As[-1], Bs[-1])
-                n_collapsed_valid_weight_mean_sep_errs[n][w].append(
-                    np.mean(mean_seps)
-                )
+                n_collapsed_valid_weight_mean_sep_errs[n][w].append(np.mean(mean_seps))
                 collapsed_valid_weight_seps[w] += list(mean_seps)
                 n_collapsed_valid_weight_mean_sep_errs[n][w].append(
                     np.std(mean_seps) / np.sqrt(len(mean_seps))
@@ -128,7 +133,9 @@ def full_weights_analysis(graphs):
     plt.legend()
     plt.xlabel("Weight")
     plt.ylabel("Mean Separation")
-    plt.title(f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
+    plt.title(
+        f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
+    )
     plt.show()
 
     collapsed_mean_seps = [
@@ -150,13 +157,19 @@ def full_weights_analysis(graphs):
     popt = np.polyfit(valid_weights, collapsed_mean_seps, deg=7)
     print(f"seventh order polynomial with with constants: {popt}")
     y_fit = np.poly1d(popt)(valid_weights)
-    red_chi = calculate_reduced_chi2(np.array(collapsed_mean_seps), np.array(y_fit), np.array(collapsed_mean_sep_errs))
+    red_chi = calculate_reduced_chi2(
+        np.array(collapsed_mean_seps),
+        np.array(y_fit),
+        np.array(collapsed_mean_sep_errs),
+    )
     print(f"reduced chi^2 value of: {red_chi} for collapsed weight separations")
     plt.plot(valid_weights, y_fit, label="fit")
     plt.legend()
     plt.xlabel("weight")
     plt.ylabel(f"mean separation")
-    plt.title(f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}")
+    plt.title(
+        f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
+    )
     plt.show()
 
     results = []

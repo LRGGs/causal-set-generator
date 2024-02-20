@@ -16,7 +16,9 @@ def separation_from_geodesic_by_path(graphs):
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
         for graph in graphs:
-            n_seps[graph["n"]].append(np.mean([abs(pos[1]) for pos in graph["paths"][path]]))
+            n_seps[graph["n"]].append(
+                np.mean([abs(pos[1]) for pos in graph["paths"][path]])
+            )
             # n_seps[graph["n"]] += [abs(pos[1]) for pos in graph["paths"][path]]
 
         x_data = list(n_seps.keys())
@@ -44,7 +46,9 @@ def separation_from_geodesic_by_path(graphs):
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
         for graph in graphs:
-            n_seps[graph["n"]].append(max([abs(pos[1]) for pos in graph["paths"][path]]))
+            n_seps[graph["n"]].append(
+                max([abs(pos[1]) for pos in graph["paths"][path]])
+            )
 
         x_data = list(n_seps.keys())
         y_data = [np.mean(v) for v in n_seps.values()]

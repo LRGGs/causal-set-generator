@@ -6,7 +6,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_file, fit_expo, fit_inv_poly, fit_linear, fit_expo_poly
+from src.analysis.utils import (
+    PATH_NAMES,
+    read_file,
+    fit_expo,
+    fit_inv_poly,
+    fit_linear,
+    fit_expo_poly,
+)
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")

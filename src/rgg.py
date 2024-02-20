@@ -175,19 +175,6 @@ class Graph:
 
         return edges, new_children, new_parents
 
-    def find_valid_interval(self):
-        """
-        Find all nodes that are not a source or sink apart from the
-        main source and sink
-        """
-
-        self.connected_interval.append(self.nodes[0].indx)
-        for node in self.nodes:
-            order = self.orders[node.indx]
-            if order.height != 0 and order.depth != 0:
-                self.connected_interval.append(node.indx)
-        self.connected_interval.append(self.nodes[-1].indx)
-
     def interval(self, node_pair):
         """
         ds^2 between two nodes
@@ -212,7 +199,7 @@ class Graph:
 
         dx = pos1 - pos0
 
-        return np.sqrt(dx[0]**2 + dx[1]**2)
+        return np.sqrt(dx[0] ** 2 + dx[1] ** 2)
 
     def proper_time(self, node_pair):
         return np.sqrt(-self.interval(node_pair))
@@ -284,7 +271,18 @@ class Graph:
                     max([current_order, relative_order + 1]),
                 )
 
+    def find_valid_interval(self):
+        """
+        Find all nodes that are not a source or sink apart from the
+        main source and sink
+        """
 
+        self.connected_interval.append(self.nodes[0].indx)
+        for node in self.nodes:
+            order = self.orders[node.indx]
+            if order.order != 0:
+                self.connected_interval.append(node.indx)
+        self.connected_interval.append(self.nodes[-1].indx)
 
     def longest_path(self):
         """
@@ -495,15 +493,18 @@ def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
         shortest = sorted(list(set(itertools.chain(*graph.paths.shortest))))
         for node in graph.nodes:
             if node.indx in [0, len(graph.nodes) - 1]:
-                color_map.append('red')
+                color_map.append("red")
             elif node.indx in longest:
-                color_map.append('green')
+                color_map.append("green")
             elif node.indx in shortest:
-                color_map.append('yellow')
+                color_map.append("yellow")
             else:
-                color_map.append('cyan')
+                color_map.append("cyan")
         nx.draw(
-            g, [(n.position[1], n.position[0]) for n in graph.nodes], node_color=color_map, with_labels=True
+            g,
+            [(n.position[1], n.position[0]) for n in graph.nodes],
+            node_color=color_map,
+            with_labels=True,
         )
         plt.show()
 
@@ -514,7 +515,7 @@ def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
             plt.plot(path[:, 1], path[:, 0], "o", label=i)
         plt.xticks([-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
         ax = plt.gca()
-        ax.set_aspect('equal', adjustable='box')
+        ax.set_aspect("equal", adjustable="box")
         plt.legend()
         plt.show()
 
