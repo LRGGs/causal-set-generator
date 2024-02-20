@@ -55,27 +55,6 @@ class Graph:
         b = time.time()
         self.make_edges_minkowski_numba()
         c = time.time()
-
-        g = nx.DiGraph()
-        g.add_nodes_from(range(self.n))
-        g.add_edges_from(self.edges)
-        color_map = []
-        longest = sorted(list(set(itertools.chain(*self.paths.longest))))
-        shortest = sorted(list(set(itertools.chain(*self.paths.shortest))))
-        for node in self.nodes:
-            if node.indx in [0, len(self.nodes) - 1]:
-                color_map.append('red')
-            elif node.indx in longest:
-                color_map.append('green')
-            elif node.indx in shortest:
-                color_map.append('yellow')
-            else:
-                color_map.append('cyan')
-        nx.draw(
-            g, [(n.position[1], n.position[0]) for n in self.nodes], node_color=color_map, with_labels=True
-        )
-        plt.show()
-
         self.find_order()
         d = time.time()
         self.find_valid_interval()
@@ -117,7 +96,7 @@ class Graph:
         return [node.position[0] for node in self.nodes]
 
     def generate_nodes(self):
-        np.random.seed(1)
+        # np.random.seed(2)
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
         rotation_mat = np.array([[1, 1], [-1, 1]])
         positions.append(np.array([0, 0]))
@@ -138,18 +117,13 @@ class Graph:
         Generate edges if two nodes are within self.radius of each other
         and are time-like separated
         """
-        a = time.time()
         self.edges, children, parents = self.numba_edges(
             self.numba_nodes, self.radius, self.minkowski_metric
         )
-        b = time.time()
         children = list(children)
         parents = list(parents)
         for i in range(len(children)):
             self.relatives.append(Relatives(i, list(children[i]), list(parents[i])))
-        c = time.time()
-        # print(f"numba: {b-a}")
-        # print(f"loop: {c-b}")
 
     @staticmethod
     @njit()
@@ -264,10 +238,11 @@ class Graph:
         direction_to_start_map = {"children": 0, "parents": self.n - 1}
         for direction in possible_directions:
             vis = [False] * self.n
+            true_sink = [False] * self.n
             node = direction_to_start_map[direction]
-            self.direction_first_search(node, vis, direction)
+            self.direction_first_search(node, vis, direction, true_sink)
 
-    def direction_first_search(self, node, vis, direction):
+    def direction_first_search(self, node, vis, direction, true_node):
         """
         iterate through all nested children, considering them
         only if they have not been previously visited. Choose longest
@@ -278,32 +253,38 @@ class Graph:
             node: the parent node we are considering
             vis: which nodes have already been visited
             direction: either look through parents or children
+            true_node: list of bools for if a node is connected to the true sink/source
         """
         direction_to_order_map = {"children": "depth", "parents": "height"}
         vis[node] = True
 
         if not getattr(self.relatives[node], direction):
-            return node == self.n - 1 or node == 0
+            true_node[node] = node == self.n - 1 or node == 0
 
         for relative in getattr(self.relatives[node], direction):
             relative = int(relative)
+
             if not vis[relative]:
-                if self.direction_first_search(relative, vis, direction):
+                self.direction_first_search(relative, vis, direction, true_node)
 
-                    current_order = getattr(
-                        self.orders[node], direction_to_order_map[direction]
-                    )
-                    relative_order = getattr(
-                        self.orders[relative], direction_to_order_map[direction]
-                    )
+            if true_node[relative]:
+                true_node[node] = True
 
-                    setattr(
-                        self.orders[node],
-                        direction_to_order_map[direction],
-                        max([current_order, relative_order + 1]),
-                    )
+            if true_node[node]:
+                current_order = getattr(
+                    self.orders[node], direction_to_order_map[direction]
+                )
+                relative_order = getattr(
+                    self.orders[relative], direction_to_order_map[direction]
+                )
 
-            return True
+                setattr(
+                    self.orders[node],
+                    direction_to_order_map[direction],
+                    max([current_order, relative_order + 1]),
+                )
+
+
 
     def longest_path(self):
         """
@@ -492,11 +473,9 @@ def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
     # update_status(i + 1, "yellow")
     graph.configure_graph()
-    print(graph.orders)
-
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
     # update_status(i + 1, "blue")
-    # graph.find_paths()
+    graph.find_paths()
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
     # update_status(i + 1, "green")
 
@@ -506,6 +485,27 @@ def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
         print(f"greedy_m ({len(graph.paths.greedy_m)}: {graph.paths.greedy_m}")
         print(f"random ({len(graph.paths.random)}: {graph.paths.random}")
         print(f"shortest ({len(graph.paths.shortest)}: {graph.paths.shortest}")
+
+    if g:
+        g = nx.DiGraph()
+        g.add_nodes_from(range(n))
+        g.add_edges_from(graph.edges)
+        color_map = []
+        longest = sorted(list(set(itertools.chain(*graph.paths.longest))))
+        shortest = sorted(list(set(itertools.chain(*graph.paths.shortest))))
+        for node in graph.nodes:
+            if node.indx in [0, len(graph.nodes) - 1]:
+                color_map.append('red')
+            elif node.indx in longest:
+                color_map.append('green')
+            elif node.indx in shortest:
+                color_map.append('yellow')
+            else:
+                color_map.append('cyan')
+        nx.draw(
+            g, [(n.position[1], n.position[0]) for n in graph.nodes], node_color=color_map, with_labels=True
+        )
+        plt.show()
 
     if m:
         graph.plot_nodes()
@@ -563,7 +563,7 @@ def main():
 
     # multi_run(nrange(500, 5000, 20), 0.1, 2, 100)
     # multi_run(99, 1, 2, 30)
-    run(20, 0.2, 2, 1, g=True, j=False)
+    run(20, 0.3, 2, 1, g=True, j=False)
 
     print(time.time() - start)
 
