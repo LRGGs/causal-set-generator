@@ -27,7 +27,7 @@ for file in os.listdir(data_dir):
     with open(f"{path}/results/{file}", 'rb') as pickle_file:
         data = pickle.load(pickle_file)
     extracted_data.append(data)
-
+print(extracted_data)
 # DATA
 
 N = 10  # number of experiments

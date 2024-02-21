@@ -10,3 +10,11 @@ def file_namer(n, r, d, version):
         f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
         f"__V-{version}.pkl"
     )
+
+def temp_file_namer(n, experiment):
+    path = getcwd()
+
+    return (
+        f"{path}/temp_save/N-{n}"
+        f"__E-{experiment}.json"
+    )

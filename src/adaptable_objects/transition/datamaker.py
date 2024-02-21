@@ -9,16 +9,20 @@ import matplotlib
 
 def find_crit_r(n, r_range=np.linspace(0.0, 1.0, 100001), num_trials=250):
     if n <= 200:
-        r_range = r_range[int(r_range.shape[0] * 31 / 1001):]
+        r_range = r_range[int(r_range.shape[0] * 15 / 1001):]
     elif n <= 300:
-        r_range = r_range[int(r_range.shape[0] * 20 / 1001):]
+        r_range = r_range[int(r_range.shape[0] * 10 / 1001):]
     elif n <= 500:
-        r_range = r_range[int(r_range.shape[0] * 17 / 1001):]
+        r_range = r_range[int(r_range.shape[0] * 8 / 1001):]
     elif n <= 1000:
-        r_range = r_range[int(r_range.shape[0] * 2 / 1001):]
+        r_range = r_range[int(r_range.shape[0] * 1 / 1001):]
     trans_range = []
+    all_data = []
+    count = 0
     in_trans = False
+    out_trans = False
     for r in r_range:
+
         con_prob = 0
         for trial in range(num_trials):
             try:
@@ -31,14 +35,19 @@ def find_crit_r(n, r_range=np.linspace(0.0, 1.0, 100001), num_trials=250):
             except IndexError:
                 pass
         con_prob /= num_trials
-        if con_prob > 0.1 and not in_trans:
+
+        all_data.append([con_prob, r])
+        if con_prob >= 0.1 and not in_trans:
             trans_range.append(r)
             in_trans = True
-        if con_prob > 0.9:
+        if con_prob >= 0.9 and not out_trans:
             trans_range.append(r)
-            if len(trans_range) == 1:
-                trans_range = [trans_range[0], trans_range[0]]
-            return trans_range
+            out_trans = True
+        if con_prob >= 0.99 and out_trans:
+            count += 1
+            if count >= 4:
+                return [trans_range, all_data]
+
 
 
 if __name__ == '__main__':
@@ -47,10 +56,10 @@ if __name__ == '__main__':
     n_range = range(100, 1001, 50)
     num_trials = 250
 
-    n_experiments = 20
+    n_experiments = 10
     for experiment in tqdm(range(n_experiments)):
 
-        cpus = multiprocessing.cpu_count() - 1
+        cpus = multiprocessing.cpu_count() - 2
         p = multiprocessing.Pool(processes=cpus)
         results = p.map(find_crit_r, n_range, 2)  # multiprocess different n
 

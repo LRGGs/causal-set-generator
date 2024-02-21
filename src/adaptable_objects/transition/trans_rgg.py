@@ -95,7 +95,6 @@ class Network:
 
         # temporary holders
         self.edges = []
-        self.lpath = None
 
     # GENERATE AND CONNECT
 
@@ -148,7 +147,7 @@ class Network:
         longest = self.longest_path(depths, children)
 
         # Save to dataframe
-        self.lpath = len(longest)
+        return len(longest)
 
     # PATHS
 
