@@ -8,7 +8,8 @@ from iminuit import Minuit
 import matplotlib
 from matplotlib import gridspec
 
-matplotlib.use("TkAgg")
+
+# matplotlib.use("TkAgg")
 
 
 def fit_1(x, par):
@@ -33,7 +34,6 @@ for file in os.listdir(data_dir):
     extracted_data.append(data)
 
 # DATA
-
 N = 10  # number of experiments
 Nsqrt = np.sqrt(N)
 
@@ -60,10 +60,11 @@ m_fit_1 = Minuit(least_squares_fit_1, fit_1_params)
 # m_fit_1.simplex()
 m_fit_1.migrad()
 m_fit_1.hesse()
-# print(m_fit_1)
+print(m_fit_1)
 m = m_fit_1.params[0].value
 merr = m_fit_1.params[0].error
 red_chi_1 = m_fit_1.fval / m_fit_1.ndof
+print(m_fit_1.fval, m_fit_1.ndof)
 
 fit_2_params = (2)
 
@@ -73,18 +74,18 @@ m_fit_2 = Minuit(least_squares_fit_2, fit_2_params)
 # m_fit_2.simplex()
 m_fit_2.migrad()
 m_fit_2.hesse()
-# print(m_fit_2)
+print(m_fit_2)
 m = m_fit_2.params[0].value
 merr = m_fit_2.params[0].error
 red_chi_2 = m_fit_2.fval / m_fit_2.ndof
-
+print(m_fit_2.fval, m_fit_2.ndof)
 
 # PLOTTING
 
 # 1 (1 / mean(L))
 
 
-fig = plt.figure(figsize=(10, 10), dpi=120)
+fig = plt.figure(figsize=(10, 11), dpi=500)
 gs = gridspec.GridSpec(2, 1, height_ratios=[1, 5])
 
 # share x axis with residuals plot
@@ -93,19 +94,27 @@ ax_res.grid()
 # ax_res.set_yscale("log", base=10)
 ax_res.set_ylabel('$\delta$', fontsize=20)
 
-
 residuals2 = np.abs(fit_2(n_range, m_fit_2.values) - 1 / l_means)
 residuals1 = np.abs(fit_1(n_range, m_fit_1.values) - 1 / l_means)
 
-ax_res.plot(n_range, residuals2)
-ax_res.plot(n_range, residuals1)
+ax_res.plot(n_range, residuals2, "k-", label='$\delta_1$ (Fit 1 Residuals)')
+ax_res.plot(n_range, residuals1, "b--", label='$\delta_2$ (Fit 2 Residuals)')
+
+ax_res.legend(loc='upper right', fontsize=16, framealpha=1)
+ax_res.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+ax_res.tick_params(axis='both', labelsize=10, direction='in', top=True, right=True,
+               which='both')
 
 ax = fig.add_subplot(gs[1], sharex=ax_res)
 plt.setp(ax_res.get_xticklabels(), visible=False)
 ax.grid()
 
-xs = np.linspace(95, 15100, 2000)
-
+xs = np.linspace(90, 15010, 2000)
+ax.plot(xs, fit_2(xs, m_fit_2.values), color='black', linewidth=1.2,
+        label=r'Fit 1: $\langle L \rangle^{-1} = m N^{-\frac{1}{2}}$' +
+              " $(\chi^2_\\nu ={:.2f})$".format(red_chi_2)
+        )
 ax.plot(xs, fit_1(xs, m_fit_1.values), "b--", linewidth=1.5,
         label=r'Fit 2: $\langle L \rangle^{-1} = m N^{-\frac{1}{2}}$'
               r'$ + aN^{-{\alpha}}$' +
@@ -119,10 +128,6 @@ ax.plot(xs, fit_1(xs, m_fit_1.values), "b--", linewidth=1.5,
         #                                    m_fit_1.params[2].error) +
         # "$c = {:.0f} \pm {:.0f}$) ".format(m_fit_1.params[3].value, m_fit_1.params[3].error)
         )
-ax.plot(xs, fit_2(xs, m_fit_2.values), color='black', linewidth=1.2,
-        label=r'Fit 1: $\langle L \rangle^{-1} = m N^{-\frac{1}{2}}$' +
-              " $(\chi^2_\\nu ={:.2f})$".format(red_chi_2)
-        )
 
 ax.errorbar(n_range, 1 / l_means,
             yerr=l_err / l_means ** 2, label="Data",
@@ -132,28 +137,30 @@ ax.errorbar(n_range, 1 / l_means,
 #              label= r"$\langle L ^{-1}\rangle$", fmt= '.', capsize= 3, zorder=-1,
 #             color="r")
 
-axins = ax.inset_axes([4000, 0.011, 11000, 0.032], transform=ax.transData,
-                      xticks=[], yticks=[])
-ins_n = int(len(n_range) * 3900 / 14900)
-ins_xs = np.linspace(4000, 15000, 1000)
-axins.plot(ins_xs, fit_1(ins_xs, m_fit_1.values), 'b--', linewidth=2.5)
+axins = ax.inset_axes([3200, 0.012, 11600, 0.036], transform=ax.transData,
+                      xticks=[], yticks=[], xlim=(2970, 15030))
+ins_n = int(len(n_range) * 2900 / 14900)
+ins_xs = np.linspace(3000, 15000, 1000)
 axins.plot(ins_xs, fit_2(ins_xs, m_fit_2.values), color='black', linewidth=1.5)
+axins.plot(ins_xs, fit_1(ins_xs, m_fit_1.values), 'b--', linewidth=2.5)
 axins.errorbar(n_range[ins_n:], (1 / l_means)[ins_n:],
                yerr=(l_err / l_means ** 2)[ins_n:],
                fmt='.', capsize=5, zorder=-1, linewidth=2, color="#E69F00")
 
 handles, labels = ax.get_legend_handles_labels()
 
-ax.legend(reversed(handles), reversed(labels), loc='upper right', fontsize=16,
+ax.legend([handles[2], handles[0], handles[1]], [labels[2], labels[0], labels[1]], loc='upper right', fontsize=16,
           framealpha=1)
 ax.tick_params(axis='both', labelsize=18, direction='in', top=True, right=True,
                which='both')
 ax.xaxis.set_minor_locator(MultipleLocator(500))
 ax.yaxis.set_minor_locator(MultipleLocator(0.0025))
-ax.indicate_inset_zoom(axins, edgecolor="black")
+ax.indicate_inset_zoom(axins, edgecolor="black", alpha=0.9)
 
 ax.set_xlabel('N', fontsize=20)
 ax.set_ylabel(r"$\langle L \rangle^{-1}$", fontsize=20)
+
+ax.set_xlim(-10, 15100)
 
 plt.subplots_adjust(hspace=.0)  # remove distance between subplots
 plt.show()
