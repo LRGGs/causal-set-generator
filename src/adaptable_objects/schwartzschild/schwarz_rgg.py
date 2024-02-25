@@ -12,21 +12,6 @@ import networkx as nx
 from scipy.interpolate import CubicSpline
 
 
-def depth_first_search(node, vis, depths, children):
-    vis[node] = True
-
-    for child in children[node]:
-        if not vis[child]:
-            depth_first_search(child, vis, depths, children)
-
-        current_depth = depths[node]
-        child_depth = depths[child]
-
-        depths[node] = max([current_depth, child_depth + 1])
-
-    return depths
-
-
 @njit()
 def numba_edges(nodes, r, r_s):
     r2 = r * r
@@ -100,35 +85,53 @@ class Network:
         self.depths = np.zeros(self.n)
         self.heights = np.zeros(self.n)
 
-        self.r_s = 2 * 9.6144
-
+        self.r_s = 2 * 6.69935
+        self.source = [0, 36]
+        self.sink = [80, 14.4247]
 
     # GENERATE AND CONNECT
 
     def generate(self):
-        def f(r):
-            vol = r * r #* (1 - self.r_s / r)
-            return 1 / vol
-
-        # Generate numpy seed with random module in case of multiprocessing
-        np.random.seed(random.randint(0, 16372723))
-
-        # Generate uniform points in desired region
-        r = np.linspace(25, 40, 1000000)
-        y = f(r)
-        ycdf = y.cumsum()
-        ycdf = ycdf / ycdf[-1]
-        inv_cdf = CubicSpline(ycdf, r)
-
-        u_poses = np.random.uniform(0, 1, size= (self.n - 2))
-        r_poses = inv_cdf(u_poses)
-        t_poses = np.random.uniform(20 , 100, size= (self.n - 2))
+        # def f(r):
+        #     vol = r * r
+        #     return 1 / vol
+        #
+        # # Generate numpy seed with random module in case of multiprocessing
+        # np.random.seed(random.randint(0, 16372723))
+        #
+        # # Generate uniform points in desired region
+        # r = np.linspace(self.source[1], self.sink[1], 1000000)
+        # y = f(r)
+        # ycdf = y.cumsum()
+        # ycdf = ycdf / ycdf[-1]
+        # inv_cdf = CubicSpline(ycdf, r)
+        #
+        # u_poses = np.random.uniform(0, 1, size=(self.n - 2))
+        # r_poses = inv_cdf(u_poses)
+        r_poses = np.random.uniform(self.source[1], self.sink[1], size=(self.n - 2))
+        t_poses = np.random.uniform(self.source[0], self.sink[0], size=(self.n - 2))
         square_poses = np.dstack((t_poses, r_poses))[0].astype(np.float32)
-        source_sink = np.array([[20, 40], [100, 25]])
+        source_sink = np.array([self.source, self.sink])
         square_poses = np.append(square_poses, source_sink, axis=0)
 
+        square_poses= list(square_poses)
+
+        new_square_poses = []
+        for coord_pair in square_poses:
+            t = coord_pair[0]
+            r = coord_pair[1]
+            c1 = 36 + self.r_s * np.log(abs(36 / self.r_s - 1))
+            c2 = 80 + 14.4247 + self.r_s * np.log(abs(14.4247 / self.r_s - 1))
+            if c1 - (r + self.r_s * np.log(abs(r / self.r_s - 1))) < t < c2 - (r + self.r_s * np.log(abs(r / self.r_s - 1))):
+                new_square_poses.append(coord_pair)
+        new_square_poses = np.array(new_square_poses)
+        self.n = new_square_poses.shape[0]
+        self.depths = np.zeros(self.n)
+        self.heights = np.zeros(self.n)
+        self.paths = np.zeros(self.n).astype(int)
+
         # Sort by time coordinate (topological sort)
-        sorted_poses = square_poses[square_poses[:, 0].argsort()]  # topological sort
+        sorted_poses = new_square_poses[new_square_poses[:, 0].argsort()]  # topological sort
 
         self.poses = sorted_poses
 
@@ -146,39 +149,23 @@ class Network:
         # Assign depth by searching up from bottom node
         start_node = 0
         init_vis = [False] * self.n  # initially no nodes visited
+        true_sink = [False] * self.n
         self.depths = self.depth_first_search(start_node, init_vis,
-                                              self.depths, self.children, False)
+                                              self.depths, self.children, true_sink)
         # Assign height by searching down from top node
         start_node = self.n - 1
         init_vis = [False] * self.n
+        true_sink = [False] * self.n
         self.heights = self.depth_first_search(start_node, init_vis,
-                                               self.heights, self.parents, False)
-
+                                               self.heights, self.parents, true_sink)
 
         # Find connected interval
         connected_interval = np.arange(self.n)[(self.depths > 0) & (self.heights > 0)]
         self.connected_interval = np.append(connected_interval, [0, self.n - 1])
 
-        # Do another depth and height search on the connected interval only
-        self.depths = np.zeros(self.n)
-        self.heights = np.zeros(self.n)
-
-        # Assign depth by searching up from bottom node
-        start_node = 0
-        init_vis = [False] * self.n  # initially no nodes visited
-        self.depths = self.depth_first_search(start_node, init_vis,
-                                              self.depths, self.children, True)
-
-        # Assign height by searching down from top node
-        start_node = self.n - 1
-        init_vis = [False] * self.n
-        self.heights = self.depth_first_search(start_node, init_vis,
-                                               self.heights, self.parents, True)
-
         # Assign weight classes
         criticality = self.heights + self.depths
         self.weights = max(criticality) - criticality
-
 
     # PATHS
 
@@ -194,7 +181,6 @@ class Network:
             next_node = random.choice(valid_children)
             path.append(next_node)
             node = next_node
-        print(path)
 
         self.paths[path] = self.paths[path] | 0b0001
 
@@ -250,33 +236,51 @@ class Network:
         metric = np.array([[-(1 - self.r_s / r_met), 0], [0, 1 / (1 - self.r_s / r_met)]])
         return metric @ dx @ dx
 
-    def depth_first_search(self, node, vis, depths, children, second):
+    def depth_first_search(self, node, vis, depths, children, true_nodes):
         vis[node] = True
+
+        if not list(children[node]):
+            true_nodes[node] = node == self.n - 1 or node == 0
+
         for child in children[node]:
-            if second:
-                if child not in self.connected_interval:
-                    depths[int(child)] = 0
-                    continue
+            child = int(child)
+
             if not vis[child]:
-                self.depth_first_search(child, vis, depths, children, second)
+                self.depth_first_search(child, vis, depths, children, true_nodes)
 
-            current_depth = depths[node]
-            child_depth = depths[child]
+            if true_nodes[child]:
+                true_nodes[node] = True
 
-            depths[node] = max([current_depth, child_depth + 1])
+            if true_nodes[node]:
+                current_depth = depths[node]
+                child_depth = depths[child]
+
+                depths[node] = max([current_depth, child_depth + 1])
 
         return depths
 
-    def plot(self, show_paths=False):
+    # VISUALS
+
+    def plot(self, show_paths=False, show_geodesic=False):
         mask = np.array([i for i in range(self.n) if i in self.connected_interval])
-        plt.plot(self.poses[:, 1][mask], self.poses[:, 0][mask], "g.")
+        plt.plot(self.poses[:, 1][mask], self.poses[:, 0][mask], "g,")
 
         if show_paths:
+            # s_mask = np.array([i & 0b0010 for i in self.paths])
+            # plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co")
+            #
+            # r_mask = np.array([i & 0b0100 for i in self.paths])
+            # plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro")
+            #
+            # g_mask = np.array([i & 0b1000 for i in self.paths])
+            # plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-ko")
+
             l_mask = np.array([i & 0b0001 for i in self.paths])
             plt.plot(self.poses[:, 1][l_mask == 1], self.poses[:, 0][l_mask == 1], "-bo")
-
-            s_mask = np.array([i & 0b0010 for i in self.paths])
-            plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-ro")
+        if show_geodesic:
+            rs = np.linspace(14.4247, 36, 1000)
+            ts = self.t_geodesic(rs)
+            plt.plot(rs, ts, color="k", label="True Geodesic")
 
     def graph(self):
         swapped_poses = self.poses
@@ -287,20 +291,83 @@ class Network:
         G.add_edges_from(self.edges)
         nx.draw(G, pos=swapped_poses, with_labels=True)
 
+    # INVESTIGATIONS
+    def t_geodesic(self, r):
+        rom = 19.5 / self.r_s  # frequent term r_0 / 2M
+        term1 = self.r_s * ((2 / 3) * rom ** (3 / 2)
+                            + 2 * np.sqrt(rom)
+                            + np.log(abs(np.sqrt(rom) - 1) / (np.sqrt(rom) + 1)))
+        input_rom = r / self.r_s
+        term2 = self.r_s * ((2 / 3) * input_rom ** (3 / 2)
+                            + 2 * np.sqrt(input_rom)
+                            + np.log(abs(np.sqrt(input_rom) - 1) / (np.sqrt(input_rom) + 1)))
+        return 48 + term1 - term2
 
+    def coord_dist(self, path):
+        if path == "l":
+            mask = np.array([i & 0b0001 for i in self.paths])
+            val = 1
+        elif path == "s":
+            mask = np.array([i & 0b0010 for i in self.paths])
+            val = 2
+        elif path == "r":
+            mask = np.array([i & 0b0100 for i in self.paths])
+            val = 4
+        elif path == "g":
+            mask = np.array([i & 0b1000 for i in self.paths])
+            val = 8
+        else:
+            return "Invalid path"
+
+        ts = self.poses[:, 0][mask == val]
+        rs = self.poses[:, 1][mask == val]
+        predicted_rs = self.t_geodesic(ts)
+
+        return np.sum((predicted_rs - rs)**2 / rs / rs.shape[0])
 
 
 if __name__ == "__main__":
-    matplotlib.use("TkAgg")
+    # matplotlib.use("TkAgg")
 
-    net = Network(10000, 100, 2)
+    net = Network(100000, 5, 2)
+
+    start = time.time()
+
     net.generate()
+    print(time.time() - start)
+    start = time.time()
+
     net.connect()
+    print(time.time() - start)
+    start = time.time()
+
     net.order()
+    print(net.connected_interval.shape)
+    print(time.time() - start)
+    start = time.time()
+
     # net.graph()
     # plt.show()
+
     net.longest_path()
+    print(time.time() - start)
+    start = time.time()
+
+    net.greedy_path()
+    print(time.time() - start)
+    start = time.time()
+
+    net.random_path()
+    print(time.time() - start)
+    start = time.time()
+
     net.shortest_path()
-    plt.figure(figsize=(4, 20))
-    net.plot(show_paths=True)
+    print(time.time() - start)
+    start = time.time()
+
+    print(net.coord_dist("l"))
+
+    plt.figure(figsize=(6, 8))
+    net.plot(show_paths=True, show_geodesic=True)
+    plt.legend()
     plt.show()
