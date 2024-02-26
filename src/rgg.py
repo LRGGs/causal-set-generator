@@ -513,11 +513,15 @@ def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
         for i in PATH_NAMES:
             path = graph.path_positions(i)
             plt.plot(path[:, 1], path[:, 0], "o", label=i)
+        plt.plot([0, 0], [0, 1], color="black")
         plt.xticks([-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
         ax = plt.gca()
         ax.set_aspect("equal", adjustable="box")
         plt.legend()
-        plt.show()
+        plt.title(f"A Fully Connected and Pathed Graph of {graph.n} Nodes")
+        plt.xlabel("X - Spatial Dimension")
+        plt.ylabel("T - Temporal Dimension")
+        plt.savefig("../images/grap paths.png")
 
     if j:
         thread = multiprocessing.current_process().name
@@ -564,7 +568,7 @@ def main():
 
     # multi_run(nrange(500, 5000, 20), 0.1, 2, 100)
     # multi_run(99, 1, 2, 30)
-    run(20, 0.3, 2, 1, g=True, j=False)
+    run(40, 0.2, 2, 1, g=True, m=True)
 
     print(time.time() - start)
 
