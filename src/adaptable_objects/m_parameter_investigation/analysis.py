@@ -13,7 +13,8 @@ from matplotlib import gridspec
 
 
 def fit_1(x, par):
-    return 1 / (par[0] * np.sqrt(x)) + par[1] * x ** (-par[2])
+    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-par[2]))
+    return 1 / ans
 
 
 def fit_2(x, m):
@@ -52,7 +53,7 @@ n_range = np.array(range(100, 15001, 100))
 
 # LEAST SQUARES FIT
 
-fit_1_params = (2, 0.5, 0.76)
+fit_1_params = (2, 1.5, 0.33)
 
 least_squares_fit_1 = LeastSquares(n_range, (1 / l_means),
                                    (l_err / l_means ** 2), fit_1)
@@ -85,7 +86,7 @@ print(m_fit_2.fval, m_fit_2.ndof)
 # 1 (1 / mean(L))
 
 
-fig = plt.figure(figsize=(10, 11), dpi=500)
+fig = plt.figure(figsize=(10, 11), facecolor='#F2F2F2')
 gs = gridspec.GridSpec(2, 1, height_ratios=[1, 5])
 
 # share x axis with residuals plot
@@ -112,12 +113,12 @@ ax.grid()
 
 xs = np.linspace(90, 15010, 2000)
 ax.plot(xs, fit_2(xs, m_fit_2.values), color='black', linewidth=1.2,
-        label=r'Fit 1: $\langle L \rangle^{-1} = m N^{-\frac{1}{2}}$' +
+        label=r'Fit 1: $\langle L \rangle = m N^{\frac{1}{2}}$' +
               " $(\chi^2_\\nu ={:.2f})$".format(red_chi_2)
         )
 ax.plot(xs, fit_1(xs, m_fit_1.values), "b--", linewidth=1.5,
-        label=r'Fit 2: $\langle L \rangle^{-1} = m N^{-\frac{1}{2}}$'
-              r'$ + aN^{-{\alpha}}$' +
+        label=r'Fit 2: $\langle L \rangle^ = m N^{\frac{1}{2}}$'
+              r'$(1 + aN^{-{\alpha}})$' +
               " $(\chi^2_\\nu ={:.2f})$".format(red_chi_1)
         # "\n"
         # "($m = {:.3f} \pm {:.3f}$, ".format(m, merr) +
@@ -163,6 +164,7 @@ ax.set_ylabel(r"$\langle L \rangle^{-1}$", fontsize=20)
 ax.set_xlim(-10, 15100)
 
 plt.subplots_adjust(hspace=.0)  # remove distance between subplots
+plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000)
 plt.show()
 
 #

@@ -115,7 +115,7 @@ print(m_fit.fval, m_fit.ndof)
 
 # PLOTTING
 
-fig = plt.figure(figsize=(10, 8), dpi=600)  # set a figure size similar to the default
+fig = plt.figure(figsize=(13, 8), dpi=600)  # set a figure size similar to the default
 ax = fig.add_subplot(111)
 ax.grid()
 
@@ -123,7 +123,7 @@ xs = np.linspace(40, 1050, 1000)
 ax.fill_between(xs, fit(xs, a_u, b_u, c_u), fit(xs, a_l, b_l, c_l),
                 alpha=0.2, label="Transition Region")
 ax.plot(xs, fit(xs, a, b, c), color='black',
-        label="Fit $r = aN^{-\dfrac{1}{2}} + bN^{-c}$, " +
+        label="Fit $R = aN^{-\dfrac{1}{2}} + bN^{-c}$, " +
               #"\n"
               #"$a = {:.3f} \pm {:.3f}$, "
               #"$b = {:.3f} \pm {:.3f}$, "
@@ -132,13 +132,13 @@ ax.plot(xs, fit(xs, a, b, c), color='black',
         )
 ax.errorbar(n_range, rs_means,
             yerr=rs_err,
-            label="$\Pi(r, N) = 0.5$", fmt=',', capsize=4, zorder=-1, color="#E69F00")
+            label="$\Pi(R, N) = 0.5$", fmt=',', capsize=4, zorder=-1, color="#E69F00")
 ax.errorbar(n_range, rs_u_means,
             yerr=rs_u_err,
-            label="$\Pi(r, N) = 0.9$", fmt=',', capsize=4, zorder=-1, color="b")
+            label="$\Pi(R, N) = 0.9$", fmt=',', capsize=4, zorder=-1, color="b")
 ax.errorbar(n_range, rs_l_means,
             yerr=rs_l_err,
-            label="$\Pi(r, N) = 0.1$", fmt=',', capsize=4, zorder=-1, color="r")
+            label="$\Pi(R, N) = 0.1$", fmt=',', capsize=4, zorder=-1, color="r")
 
 handles, labels = ax.get_legend_handles_labels()
 
@@ -148,10 +148,11 @@ ax.xaxis.set_minor_locator(MultipleLocator(25))
 ax.yaxis.set_minor_locator(MultipleLocator(0.0025))
 
 ax.set_xlabel('$N$', fontsize=20)
-ax.set_ylabel('$r$', fontsize=20)
+ax.set_ylabel('$R$', fontsize=20)
 ax.set_ylim(0.01, 0.09)
 ax.set_xlim(80, 1020)
 
+plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
 plt.show()
 
 # Full transition analysis
@@ -185,4 +186,6 @@ cond_prob_std = np.std(cond_prob, axis=0)
 
 plt.errorbar(np.sqrt(1000) * r_range, cond_prob_means[18], yerr=cond_prob_std[18], fmt="r,")
 plt.errorbar(np.sqrt(100) * r_range, cond_prob_means[0], yerr=cond_prob_std[0], fmt="b,")
+
+#plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
 plt.show()

@@ -13,8 +13,7 @@ from scipy.interpolate import CubicSpline
 
 
 @njit()
-def numba_edges(nodes, r, r_s):
-    r2 = r * r
+def numba_edges(nodes, r_s):
     edges = List()
     n = len(nodes)
     children = List()
@@ -59,7 +58,7 @@ def numba_edges(nodes, r, r_s):
 
 
 class Network:
-    def __init__(self, n, r, d):
+    def __init__(self, n, d):
         """
 
         Args:
@@ -70,7 +69,6 @@ class Network:
         assert d == 2, "Unsupported Dimension (use d=2)"
 
         self.n = int(n)
-        self.r = r
         self.d = d
 
         self.poses = []
@@ -95,9 +93,9 @@ class Network:
         # def f(r):
         #     vol = r * r
         #     return 1 / vol
-        #
-        # # Generate numpy seed with random module in case of multiprocessing
-        # np.random.seed(random.randint(0, 16372723))
+
+        # Generate numpy seed with random module in case of multiprocessing
+        np.random.seed(random.randint(0, 16372723))
         #
         # # Generate uniform points in desired region
         # r = np.linspace(self.source[1], self.sink[1], 1000000)
@@ -136,7 +134,7 @@ class Network:
         self.poses = sorted_poses
 
     def connect(self):
-        edges, children, parents = numba_edges(self.poses, self.r, self.r_s)
+        edges, children, parents = numba_edges(self.poses, self.r_s)
 
         self.parents = parents
         self.children = children
@@ -321,15 +319,15 @@ class Network:
 
         ts = self.poses[:, 0][mask == val]
         rs = self.poses[:, 1][mask == val]
-        predicted_rs = self.t_geodesic(ts)
-
-        return np.sum((predicted_rs - rs)**2 / rs / rs.shape[0])
+        predicted_ts = self.t_geodesic(rs)
+        result = np.sum((predicted_ts - ts)**2) / ts.shape[0]
+        return result
 
 
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-    net = Network(100000, 5, 2)
+    net = Network(1000, 2)
 
     start = time.time()
 

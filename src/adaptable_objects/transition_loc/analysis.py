@@ -110,8 +110,9 @@ ax.tick_params(axis='both',labelsize = 18, direction='in',top = True, right = Tr
 ax.xaxis.set_minor_locator(MultipleLocator(25))
 ax.yaxis.set_minor_locator(MultipleLocator(0.0025))
 
-ax.set_xlabel('$N$',fontsize = 20)
-ax.set_ylabel('$r_{crit}$',fontsize = 20)
+ax.set_xlabel('$N$',fontsize=20)
+ax.set_ylabel('$r_{crit}$', fontsize=20)
+
 
 plt.show()
 
