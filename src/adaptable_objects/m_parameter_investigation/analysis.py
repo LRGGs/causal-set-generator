@@ -86,7 +86,7 @@ print(m_fit_2.fval, m_fit_2.ndof)
 # 1 (1 / mean(L))
 
 
-fig = plt.figure(figsize=(10, 11), facecolor='#F2F2F2')
+fig = plt.figure(figsize=(15, 11), facecolor='#F2F2F2')
 gs = gridspec.GridSpec(2, 1, height_ratios=[1, 5])
 
 # share x axis with residuals plot
@@ -150,8 +150,8 @@ axins.errorbar(n_range[ins_n:], (1 / l_means)[ins_n:],
 
 handles, labels = ax.get_legend_handles_labels()
 
-ax.legend([handles[2], handles[0], handles[1]], [labels[2], labels[0], labels[1]], loc='upper right', fontsize=16,
-          framealpha=1)
+ax.legend([handles[2], handles[0], handles[1]], [labels[2], labels[0], labels[1]],
+          loc='upper right', fontsize=16, framealpha=1)# bbox_to_anchor=(1, 1))
 ax.tick_params(axis='both', labelsize=18, direction='in', top=True, right=True,
                which='both')
 ax.xaxis.set_minor_locator(MultipleLocator(500))
@@ -164,8 +164,8 @@ ax.set_ylabel(r"$\langle L \rangle^{-1}$", fontsize=20)
 ax.set_xlim(-10, 15100)
 
 plt.subplots_adjust(hspace=.0)  # remove distance between subplots
-plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000)
-plt.show()
+plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000, bbox_inches="tight")
+#plt.show()
 
 #
 #
