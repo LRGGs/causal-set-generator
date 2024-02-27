@@ -8,7 +8,7 @@ from scipy.optimize import curve_fit
 
 from src.utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", "greedy_m", "greedy_o", "random", "shortest"]
+PATH_NAMES = ["longest", "greedy_e", "greedy_m", "random", "shortest"]
 
 
 def expo(x, a, b):
@@ -36,11 +36,13 @@ def fit_expo(x_data, y_data, y_err, path, params=None):
         error = np.sqrt(np.diag(pcov))
         print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
         y_fit = [expo(x, *popt) for x in x_data]
-        plt.plot(x_data, y_fit, label=f"{path} fit")
+        l, = plt.plot(x_data, y_fit)
         red_chi = calculate_reduced_chi2(
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+        legend = f"{path} fit: ${popt[0]:.2f}\pm{error[0]:.2f}xN^{{{popt[1]:.2f}\pm{error[1]:.2f}}}$\n$X^2_\\nu = {red_chi:.3f}$"
+        return l, legend
 
 
 def fit_inv_poly(x_data, y_data, y_err, path, params=None):

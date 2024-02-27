@@ -9,7 +9,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import ks_2samp
 
-from src.analysis.utils import read_file, calculate_reduced_chi2, expo
+from src.analysis.utils import read_file, calculate_reduced_chi2, expo, expo_inv_poly
 from src.utils import nrange
 
 
@@ -22,7 +22,7 @@ def full_weights_analysis(graphs):
             if len(weight) == 0 and i in valid_weights:
                 valid_weights.remove(i)
     max_weight = next(i for i in range(100) if i not in valid_weights) - 1
-
+    max_weight = 40
     valid_n_weight_mean_sep_errs = defaultdict(lambda: defaultdict(list))
     mean_vals = []
     for i, (n, weights_dict) in enumerate(n_weight_seps.items()):
@@ -43,10 +43,11 @@ def full_weights_analysis(graphs):
 
     min_y, max_y = float(min(ns)), float(max(ns))
     min_x, max_x = 0.0, float(max_weight)
-    plt.figure(figsize=(5, 9))
+    plt.figure(figsize=(5.5, 9))
     plt.imshow(
         np.flip(mean_vals, axis=0), extent=(min_x, max_x, min_y, max_y), aspect=0.01
     )
+    # plt.tight_layout()
     plt.xlabel("Weight")
     plt.ylabel("Number of Nodes")
     colorbar = plt.colorbar()

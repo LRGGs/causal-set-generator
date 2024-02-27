@@ -71,5 +71,5 @@ def mean_angular_deviations_per_path_per_n(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_file(nrange(500, 5000, 20), 0.1, 2, 100)
+    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
     mean_angular_deviations_per_path_per_n(graphs)
