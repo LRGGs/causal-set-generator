@@ -117,6 +117,19 @@ class bcolors:
     UNDERLINE = "\033[4m"
 
 
+label_map = {
+    "longest": "Longest",
+    "shortest": "Shortest",
+    "random": "Random",
+    "greedy_e": "Greedy Euclidean",
+    "greedy_m": "Greedy Minkowski",
+}
+colour_map = {
+    "shortest": "mediumorchid",
+    "random": "crimson",
+    "greedy_m": "black",
+}
+
 @dataclass
 class Node:
     indx: int

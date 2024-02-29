@@ -27,7 +27,14 @@ def linear(x, a):
     return a
 
 
-def fit_expo(x_data, y_data, y_err, path, params=None):
+def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
+    label_map = {
+        "longest": "Longest",
+        "shortest": "Shortest",
+        "random": "Random",
+        "greedy_e": "Greedy Euclidean",
+        "greedy_m": "Greedy Minkowski",
+    }
     if path in ["longest", "greedy_e", "greedy_o"]:
         params = params if params is not None else [1.7, 0.5]
         popt, pcov = curve_fit(
@@ -35,14 +42,20 @@ def fit_expo(x_data, y_data, y_err, path, params=None):
         )
         error = np.sqrt(np.diag(pcov))
         print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
-        y_fit = [expo(x, *popt) for x in x_data]
-        l, = plt.plot(x_data, y_fit)
+        y_fit = np.array([expo(x, *popt) for x in x_data])
         red_chi = calculate_reduced_chi2(
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-        legend = f"{path} fit: ${popt[0]:.2f}\pm{error[0]:.2f}xN^{{{popt[1]:.2f}\pm{error[1]:.2f}}}$\n$X^2_\\nu = {red_chi:.3f}$"
-        return l, legend
+        legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$"
+        if not ax:
+            l, = plt.plot(x_data, y_fit, label=legend)
+        else:
+            if path == "longest":
+                l, = ax.plot(x_data, y_fit, label=legend, zorder=4, color="black", )
+            if path == "greedy_e":
+                l, = ax.plot(x_data, y_fit, linestyle="dashed", label=legend, zorder=4, color="black")
+        return l, legend, y_fit
 
 
 def fit_inv_poly(x_data, y_data, y_err, path, params=None):
