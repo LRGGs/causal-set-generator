@@ -559,9 +559,14 @@ def multi_run(n, r, d, iters):
         inputs = [[n, r, d, i] for i in range(iters)]
 
     path = os.getcwd().split("src")[0]
-    temp_file = f"{path}json_results/temp/"
-    if not os.path.exists(temp_file):
-        os.mkdir(temp_file)
+    try:
+        temp_file = f"{path}json_results/temp/"
+        if not os.path.exists(temp_file):
+            os.mkdir(temp_file)
+    except FileNotFoundError:
+        temp_file = f"{path}/json_results/temp/"
+        if not os.path.exists(temp_file):
+            os.mkdir(temp_file)
 
     inputs = sorted(inputs, key=lambda i: i[-1], reverse=True)
     p.starmap(run, inputs)
@@ -572,7 +577,7 @@ def multi_run(n, r, d, iters):
 def main():
     start = time.time()
 
-    multi_run(nrange(2000, 4000, 100), 0.1, 2, 50)
+    multi_run(nrange(200, 400, 10), 0.1, 2, 1)
     # multi_run(99, 1, 2, 30)
     # run(1000, 0.2, 2, 1, g=False, m=True)
 
