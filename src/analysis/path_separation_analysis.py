@@ -34,6 +34,7 @@ def separation_from_geodesic_by_path(graphs):
 
     residuals = []
     i = 0
+
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
         for graph in graphs:
@@ -105,46 +106,61 @@ def separation_from_geodesic_by_path(graphs):
     # plt.hist(residuals[0], bins=15)
     # plt.hist(residuals[1], bins=15)
     # plt.show()
-    fit_legends = []
-    plot_lines = []
-
-    for path in PATH_NAMES:
-        n_seps = defaultdict(list)
-        for graph in graphs:
-            n_seps[graph["n"]].append(
-                max([abs(pos[1]) for pos in graph["paths"][path]])
-            )
-
-        x_data = list(n_seps.keys())
-        y_data = [np.mean(v) for v in n_seps.values()]
-        y_err = [np.std(v) / np.sqrt(len(v)) for v in n_seps.values()]
-        plt.errorbar(
-            x_data,
-            y_data,
-            yerr=y_err,
-            ls="none",
-            capsize=5,
-            marker=".",
-            label=path,
-        )
-
-        if path in ["longest", "greedy_e", "greedy_o"]:
-            l, legend, y_fit = fit_expo(x_data, y_data, y_err, path, params=[0.4, -0.2])
-            plot_lines.append(l)
-            fit_legends.append(legend)
-
-    legend1 = plt.legend(plot_lines, fit_legends, loc='upper right', bbox_to_anchor=(1, 0.4),
-                         fancybox=True, shadow=True)
-
-    plt.legend(loc='lower left', bbox_to_anchor=(-0.08, -0.23, 1, 0.2), ncol=5, columnspacing=0.7,
-               fancybox=True, shadow=True)
-    plt.gca().add_artist(legend1)
-    plt.title(f"Max Separation from Geodesic per Path")
-    plt.xlabel("Number of Nodes")
-    plt.ylabel("Max Separation from Geodesic")
-    plt.savefig("images/Max Separation from Geodesic per Path.png", bbox_inches="tight", facecolor='#F2F2F2', dpi=1000)
+    # fit_legends = []
+    # plot_lines = []
+    #
+    # for path in PATH_NAMES:
+    #     n_seps = defaultdict(list)
+    #     for graph in graphs:
+    #         n_seps[graph["n"]].append(
+    #             max([abs(pos[1]) for pos in graph["paths"][path]])
+    #         )
+    #
+    #     x_data = list(n_seps.keys())
+    #     y_data = [np.mean(v) for v in n_seps.values()]
+    #     y_err = [np.std(v) / np.sqrt(len(v)) for v in n_seps.values()]
+    #     plt.errorbar(
+    #         x_data,
+    #         y_data,
+    #         yerr=y_err,
+    #         ls="none",
+    #         capsize=5,
+    #         marker=".",
+    #         label=path,
+    #     )
+    #
+    #     if path in ["longest", "greedy_e", "greedy_o"]:
+    #         l, legend, y_fit = fit_expo(x_data, y_data, y_err, path, params=[0.4, -0.2])
+    #         plot_lines.append(l)
+    #         fit_legends.append(legend)
+    #
+    # legend1 = plt.legend(plot_lines, fit_legends, loc='upper right', bbox_to_anchor=(1, 0.4),
+    #                      fancybox=True, shadow=True)
+    #
+    # plt.legend(loc='lower left', bbox_to_anchor=(-0.08, -0.23, 1, 0.2), ncol=5, columnspacing=0.7,
+    #            fancybox=True, shadow=True)
+    # plt.gca().add_artist(legend1)
+    # plt.title(f"Max Separation from Geodesic per Path")
+    # plt.xlabel("Number of Nodes")
+    # plt.ylabel("Max Separation from Geodesic")
+    # plt.savefig("images/Max Separation from Geodesic per Path.png", bbox_inches="tight", facecolor='#F2F2F2', dpi=1000)
+    #
+    return residuals, x_data
 
 
 if __name__ == "__main__":
+    res, xs = [], []
     graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
-    separation_from_geodesic_by_path(graphs)
+    r, x = separation_from_geodesic_by_path(graphs)
+    res += r
+    xs.append(x)
+    # graphs = read_file(nrange(2000, 4000, 100), 0.1, 2, 50, extra="paths2")
+    # r, x = separation_from_geodesic_by_path(graphs)
+    # res += r
+    # xs.append(x)
+    # i = 0
+    plt.plot(xs[0], np.abs(res[0]), label="long")
+    plt.plot(xs[0], np.abs(res[1]), "--", label="euc")
+    plt.tight_layout()
+    plt.legend()
+    plt.show()

@@ -49,9 +49,9 @@ class Graph:
         self.paths = Paths([], [], [], [], [], [])
         self.connected_interval = []
 
-    def configure_graph(self, timing=False):
+    def configure_graph(self, seed=None, timing=False):
         a = time.time()
-        self.generate_nodes()
+        self.generate_nodes(seed)
         b = time.time()
         self.make_edges_minkowski_numba()
         c = time.time()
@@ -95,8 +95,9 @@ class Graph:
     def node_t_positions(self):
         return [node.position[0] for node in self.nodes]
 
-    def generate_nodes(self):
-        np.random.seed(7)
+    def generate_nodes(self, seed=None):
+        if seed:
+            np.random.seed(seed)
         positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
         rotation_mat = np.array([[1, 1], [-1, 1]])
         positions.append(np.array([0, 0]))
@@ -466,11 +467,11 @@ class Graph:
         return {"n": len(self.nodes), "paths": self.paths_info()}
 
 
-def run(n, r, d, i=1, p=False, g=False, m=False, j=True):
+def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True):
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
     # update_status(i + 1, "yellow")
-    graph.configure_graph()
+    graph.configure_graph(seed=seed)
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
     # update_status(i + 1, "blue")
     graph.find_paths()
@@ -545,14 +546,15 @@ def multi_run(n, r, d, iters):
     if os.path.exists(new_file):
         raise FileExistsError(f"File '{new_file}' already exists.")
 
-    cpus = multiprocessing.cpu_count() - 1
+    cpus = multiprocessing.cpu_count() - 2
     p = multiprocessing.Pool(processes=cpus)
     variables = [n, r, d]
     if any(isinstance(i, list) for i in variables):
         variables = [[i] if not isinstance(i, list) else i for i in variables]
         variables = [list(i) for i in product(*variables)]
         variables = variables * iters
-        inputs = [[*j, i] for i, j in enumerate(variables)]
+        seeds = np.random.randint(0, 2**32 - 1, len(variables), dtype=np.int64)
+        inputs = [[*j, seeds[i], i] for i, j in enumerate(variables)]
     else:
         inputs = [[n, r, d, i] for i in range(iters)]
 
@@ -570,9 +572,9 @@ def multi_run(n, r, d, iters):
 def main():
     start = time.time()
 
-    # multi_run(nrange(500, 5000, 20), 0.1, 2, 100)
+    multi_run(nrange(2000, 4000, 100), 0.1, 2, 50)
     # multi_run(99, 1, 2, 30)
-    run(1000, 0.2, 2, 1, g=False, m=True)
+    # run(1000, 0.2, 2, 1, g=False, m=True)
 
     print(time.time() - start)
 
