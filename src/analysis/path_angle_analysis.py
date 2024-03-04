@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import (
+from src.analysis.an_utils import (
     PATH_NAMES,
     read_file,
     fit_expo,

@@ -7,7 +7,7 @@ from matplotlib import gridspec
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_file, fit_expo, fit_expo_poly
+from src.analysis.an_utils import PATH_NAMES, read_file, fit_expo, fit_expo_poly
 from src.utils import nrange, colour_map, label_map
 
 

@@ -1,12 +1,14 @@
 import json
 import pickle
+from collections import defaultdict
 from dataclasses import dataclass
+from os import getcwd
 
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 
-from utils import file_namer
+from src.utils import file_namer, nrange
 
 PATH_NAMES = ["longest", "greedy_e", "greedy_m", "random", "shortest"]
 
@@ -110,13 +112,20 @@ def fit_linear(x_data, y_data, y_err, path, params=None):
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
 
 
-def read_file(n, r, d, i, extra=None):
+def read_file(n, r, d, i, extra=None, specific=None):
     """Attempts to open a file as a pickle or JSON, depending on its content.
 
     Returns:
         Any: The parsed data from the file, or None if the file format cannot be determined.
     """
-
+    if specific:
+        path = getcwd().split("src")[0]
+        filename = path + "/results/" + specific
+        with open(filename, "rb") as file:
+            file.seek(0)  # Reset file pointer for JSON parsing
+            data = json.load(file)  # Attempt to load as JSON
+            data = sorted(data, key=lambda datum: datum["n"])
+            return data
     try:
         filename = file_namer(n, r, d, i, extra)
         with open(filename, "rb") as file:
@@ -170,3 +179,11 @@ class Data:
                 setattr(self, attr_name, np.ndarray(attr))
             else:
                 raise TypeError(f"invalid data type: {type(attr)} for {attr}")
+
+
+if __name__ == '__main__':
+    graphs = read_file(1, 1, 1, 1, specific="partial.json")
+    info = defaultdict(int)
+    for g in graphs:
+        info[g["n"]] += 1
+    print(info)

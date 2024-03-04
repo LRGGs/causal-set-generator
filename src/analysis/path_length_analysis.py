@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from src.analysis.utils import PATH_NAMES, read_file, calculate_reduced_chi2, fit_expo
+from src.analysis.an_utils import PATH_NAMES, read_file, calculate_reduced_chi2, fit_expo
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")

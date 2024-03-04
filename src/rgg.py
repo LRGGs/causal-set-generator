@@ -16,7 +16,7 @@ from numba import njit
 from numba.typed import List
 import pandas as pd
 
-from analysis.utils import PATH_NAMES
+from analysis.an_utils import PATH_NAMES
 from mlogging.handler import update_status
 from utils import *
 
@@ -543,21 +543,21 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True):
 
 def multi_run(n, r, d, iters):
     new_file = file_namer(n, r, d, iters, json=True)
-    # if os.path.exists(new_file):
-    #     raise FileExistsError(f"File '{new_file}' already exists.")
-    #
-    # cpus = multiprocessing.cpu_count() - 2
-    # p = multiprocessing.Pool(processes=cpus)
-    # variables = [n, r, d]
-    # if any(isinstance(i, list) for i in variables):
-    #     variables = [[i] if not isinstance(i, list) else i for i in variables]
-    #     variables = [list(i) for i in product(*variables)]
-    #     variables = variables * iters
-    #     seeds = np.random.randint(0, 2**32 - 1, len(variables), dtype=np.int64)
-    #     inputs = [[*j, seeds[i], i] for i, j in enumerate(variables)]
-    # else:
-    #     inputs = [[n, r, d, i] for i in range(iters)]
-    #
+    if os.path.exists(new_file):
+        raise FileExistsError(f"File '{new_file}' already exists.")
+
+    cpus = multiprocessing.cpu_count() - 2
+    p = multiprocessing.Pool(processes=cpus)
+    variables = [n, r, d]
+    if any(isinstance(i, list) for i in variables):
+        variables = [[i] if not isinstance(i, list) else i for i in variables]
+        variables = [list(i) for i in product(*variables)]
+        variables = variables * iters
+        seeds = np.random.randint(0, 2**32 - 1, len(variables), dtype=np.int64)
+        inputs = [[*j, seeds[i], i] for i, j in enumerate(variables)]
+    else:
+        inputs = [[n, r, d, i] for i in range(iters)]
+
     path = os.getcwd().split("src")[0]
     try:
         temp_file = f"{path}json_results/temp/"
@@ -567,9 +567,9 @@ def multi_run(n, r, d, iters):
         temp_file = f"{path}/json_results/temp/"
         if not os.path.exists(temp_file):
             os.mkdir(temp_file)
-    #
-    # inputs = sorted(inputs, key=lambda i: i[-1], reverse=True)
-    # p.starmap(run, inputs)
+
+    inputs = sorted(inputs, key=lambda i: i[-1], reverse=True)
+    p.starmap(run, inputs)
 
     file_clean_up(temp_file, new_file)
 
@@ -577,8 +577,11 @@ def multi_run(n, r, d, iters):
 def main():
     start = time.time()
 
-    multi_run(nrange(200, 400, 10), 0.1, 2, 1)
-    # multi_run(99, 1, 2, 30)
+    multi_run([500, 696, 893, 1090, 1287, 1484, 1681, 1878, 2075, 2272, 2469, 2666, 2863, 3060, 3257, 3454, 3651, 3848, 4045, 4242, 4439, 4636, 4833], 0.1, 2, 100)
+    multi_run([5030, 5227, 5424, 5621, 5818, 6015, 6212, 6409, 6606, 6803, 7000, 7196, 7393, 7590, 7787, 7984, 8181, 8378, 8575, 8772, 8969, 9166, 9363, 9560, 9757, 9954, 10151, 10348, 10545, 10742, 10939, 11136, 11333, 11530, 11727, 11924, 12121], 0.1, 2, 100)
+    multi_run([12318, 12515, 12712, 12909, 13106, 13303, 13500, 13696, 13893, 14090, 14287, 14484, 14681, 14878, 15075, 15272, 15469, 15666, 15863, 16060, 16257, 16454, 16651, 16848, 17045, 17242, 17439], 0.1, 2, 100)
+    multi_run([17636, 17833, 18030, 18227, 18424, 18621, 18818, 19015, 19212, 19409, 19606, 19803, 20000], 0.1, 2, 100)
+
     # run(1000, 0.2, 2, 1, g=False, m=True)
 
     print(time.time() - start)

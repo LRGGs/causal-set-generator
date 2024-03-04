@@ -9,7 +9,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import ks_2samp
 
-from src.analysis.utils import read_file, calculate_reduced_chi2, expo, expo_inv_poly
+from src.analysis.an_utils import read_file, calculate_reduced_chi2, expo, expo_inv_poly
 from src.utils import nrange
 
 
