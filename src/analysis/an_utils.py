@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 
-from src.utils import file_namer, nrange
+from utils import file_namer
 
 PATH_NAMES = ["longest", "greedy_e", "greedy_m", "random", "shortest"]
 
