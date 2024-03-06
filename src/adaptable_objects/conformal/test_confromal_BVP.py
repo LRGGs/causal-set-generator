@@ -56,6 +56,9 @@ y_guess[1] = np.linspace(x_initial, x_final, tau.size)  # Guess for x
 
 # Solve the BVP
 solution = solve_bvp(geodesic_equations_bvp, boundary_conditions, tau, y_guess)
+print(solution.y[0]) # final ts
+print(solution.y[1]) # finals xs
+
 
 # Check if the solution was successful and evaluate it
 if solution.success:

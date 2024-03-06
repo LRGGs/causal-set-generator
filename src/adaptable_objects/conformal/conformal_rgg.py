@@ -77,34 +77,58 @@ class Network:
         self.depths = np.zeros(self.n)
         self.heights = np.zeros(self.n)
 
-        self.r_s = 2 * 6.69935
         self.source = [5, 10]
-        self.sink = [5, 10]
+        self.sink = [10, 10]
 
     # GENERATE AND CONNECT
 
     def generate(self):
-        # def f(r):
-        #     vol = r * r
-        #     return 1 / vol
-
         # Generate numpy seed with random module in case of multiprocessing
         np.random.seed(random.randint(0, 16372723))
-        #
-        # # Generate uniform points in desired region
-        # r = np.linspace(self.source[1], self.sink[1], 1000000)
-        # y = f(r)
-        # ycdf = y.cumsum()
-        # ycdf = ycdf / ycdf[-1]
-        # inv_cdf = CubicSpline(ycdf, r)
-        #
-        # u_poses = np.random.uniform(0, 1, size=(self.n - 2))
-        # r_poses = inv_cdf(u_poses)
-        r_poses = np.random.uniform(self.source[1], self.sink[1], size=(self.n - 2))
-        t_poses = np.random.uniform(self.source[0], self.sink[0], size=(self.n - 2))
-        square_poses = np.dstack((t_poses, r_poses))[0].astype(np.float32)
+
+        def f(x):
+            vol = x ** 2
+            return vol
+
+        # Generate uniform points in desired region
+        x = np.linspace(7.5, 12.5, 1000000)
+
+        y_x = f(x)
+        ycdf_x = y_x.cumsum()
+        ycdf_x = ycdf_x / ycdf_x[-1]
+        inv_cdf_x = CubicSpline(ycdf_x, x)
+
+        def g(t):
+            vol = t ** 2
+            return vol
+
+        # Generate uniform points in desired region
+        t = np.linspace(5, 10, 1000000)
+
+        y_t = g(t)
+        ycdf_t = y_t.cumsum()
+        ycdf_t = ycdf_t / ycdf_t[-1]
+        inv_cdf_t = CubicSpline(ycdf_t, t)
+
+        u_poses = np.random.uniform(0, 1, size=(self.n - 2))
+        v_poses = np.random.uniform(0, 1, size=(self.n - 2))
+
+        x_poses = inv_cdf_x(u_poses)
+        t_poses = inv_cdf_t(v_poses)
+
+        square_poses = np.dstack((t_poses, x_poses))[0]
+        c1 = square_poses[:, 0] + square_poses[:, 1]
+        c2 = square_poses[:, 0] - square_poses[:, 1]
+        square_poses = square_poses[(c1 > 15) & (c1 < 20) & (c2 > -5) & (c2 < 0)]
         source_sink = np.array([self.source, self.sink])
         square_poses = np.append(square_poses, source_sink, axis=0)
+
+        # update the number of nodes
+        self.n = square_poses.shape[0]
+        self.paths = np.zeros(self.n).astype(int)
+
+        self.depths = np.zeros(self.n)
+        self.heights = np.zeros(self.n)
 
 
         # Sort by time coordinate (topological sort)
@@ -113,7 +137,8 @@ class Network:
         self.poses = sorted_poses
 
     def connect(self):
-        edges, children, parents = numba_edges(self.poses)
+        edges, children, parents = numba_edges(self.poses.astype(np.float32),
+                                               self.metric.astype(np.float32))
 
         self.parents = parents
         self.children = children
@@ -209,8 +234,9 @@ class Network:
 
     def interval2(self, p2, p1):
         dx = p2 - p1
-        r_met = (p1[1] + p2[1]) / 2
-        metric = np.array([[-(1 - self.r_s / r_met), 0], [0, 1 / (1 - self.r_s / r_met)]])
+        x = (p1[1] + p2[1]) / 2
+        t = (p1[0] + p2[0]) / 2
+        metric = self.metric * (x * t)**2
         return metric @ dx @ dx
 
     def depth_first_search(self, node, vis, depths, children, true_nodes):
@@ -239,18 +265,20 @@ class Network:
     # VISUALS
 
     def plot(self, show_paths=False, show_geodesic=False):
-        mask = np.array([i for i in range(self.n) if i in self.connected_interval])
-        plt.plot(self.poses[:, 1][mask], self.poses[:, 0][mask], "g,")
+        # mask = np.array([i for i in range(self.n) if i in self.connected_interval])
+        # plt.plot(self.poses[:, 1][mask], self.poses[:, 0][mask], "g,")
+
+        plt.plot(self.poses[:, 1], self.poses[:, 0], "g.")
 
         if show_paths:
-            # s_mask = np.array([i & 0b0010 for i in self.paths])
-            # plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co")
-            #
-            # r_mask = np.array([i & 0b0100 for i in self.paths])
-            # plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro")
-            #
-            # g_mask = np.array([i & 0b1000 for i in self.paths])
-            # plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-ko")
+            s_mask = np.array([i & 0b0010 for i in self.paths])
+            plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co")
+
+            r_mask = np.array([i & 0b0100 for i in self.paths])
+            plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro")
+
+            g_mask = np.array([i & 0b1000 for i in self.paths])
+            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-ko")
 
             l_mask = np.array([i & 0b0001 for i in self.paths])
             plt.plot(self.poses[:, 1][l_mask == 1], self.poses[:, 0][l_mask == 1], "-bo")
@@ -269,7 +297,7 @@ class Network:
         nx.draw(G, pos=swapped_poses, with_labels=True)
 
     # INVESTIGATIONS
-    def t_geodesic(self, r):
+    def t_geodesic(self, x):
         rom = 19.5 / self.r_s  # frequent term r_0 / 2M
         term1 = self.r_s * ((2 / 3) * rom ** (3 / 2)
                             + 2 * np.sqrt(rom)
@@ -306,7 +334,7 @@ class Network:
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-    net = Network(1000, 2, 2)
+    net = Network(1000, 2)
 
     start = time.time()
 
@@ -342,9 +370,9 @@ if __name__ == "__main__":
     print(time.time() - start)
     start = time.time()
 
-    print(net.coord_dist("l"))
+    #print(net.coord_dist("l"))
 
     plt.figure(figsize=(6, 8))
-    net.plot(show_paths=True, show_geodesic=True)
+    net.plot(show_paths=True, show_geodesic=False)
     plt.legend()
     plt.show()
