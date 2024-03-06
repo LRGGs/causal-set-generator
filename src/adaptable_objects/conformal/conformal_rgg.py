@@ -10,7 +10,7 @@ from numba.typed import List
 import numba.np.arraymath
 import networkx as nx
 from scipy.interpolate import CubicSpline
-
+from adaptable_objects.conformal.test_confromal_BVP import geodesic
 
 @njit()
 def numba_edges(nodes, metric):
@@ -87,7 +87,7 @@ class Network:
         np.random.seed(random.randint(0, 16372723))
 
         def f(x):
-            vol = x ** 2
+            vol = x ** 4
             return vol
 
         # Generate uniform points in desired region
@@ -99,7 +99,7 @@ class Network:
         inv_cdf_x = CubicSpline(ycdf_x, x)
 
         def g(t):
-            vol = t ** 2
+            vol = t ** 4
             return vol
 
         # Generate uniform points in desired region
@@ -305,14 +305,14 @@ class Network:
             plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-mo")
 
             e_mask = np.array([i & 0b10000 for i in self.paths])
-            plt.plot(self.poses[:, 1][e_mask == 16], self.poses[:, 0][e_mask == 16], "-ko")
+            plt.plot(self.poses[:, 1][e_mask == 16], self.poses[:, 0][e_mask == 16], "-yo")
 
             l_mask = np.array([i & 0b00001 for i in self.paths])
             plt.plot(self.poses[:, 1][l_mask == 1], self.poses[:, 0][l_mask == 1], "-bo")
         if show_geodesic:
-            rs = np.linspace(14.4247, 36, 1000)
-            ts = self.t_geodesic(rs)
-            plt.plot(rs, ts, color="k", label="True Geodesic")
+            ts = np.linspace(self.source[0], self.sink[0], 1000)
+            xs = geodesic(ts)
+            plt.plot(xs, ts, color="k", label="True Geodesic")
 
     def graph(self):
         swapped_poses = self.poses
@@ -324,37 +324,29 @@ class Network:
         nx.draw(G, pos=swapped_poses, with_labels=True)
 
     # INVESTIGATIONS
-    def t_geodesic(self, x):
-        rom = 19.5 / self.r_s  # frequent term r_0 / 2M
-        term1 = self.r_s * ((2 / 3) * rom ** (3 / 2)
-                            + 2 * np.sqrt(rom)
-                            + np.log(abs(np.sqrt(rom) - 1) / (np.sqrt(rom) + 1)))
-        input_rom = r / self.r_s
-        term2 = self.r_s * ((2 / 3) * input_rom ** (3 / 2)
-                            + 2 * np.sqrt(input_rom)
-                            + np.log(abs(np.sqrt(input_rom) - 1) / (np.sqrt(input_rom) + 1)))
-        return 48 + term1 - term2
-
     def coord_dist(self, path):
         if path == "l":
-            mask = np.array([i & 0b0001 for i in self.paths])
+            mask = np.array([i & 0b00001 for i in self.paths])
             val = 1
         elif path == "s":
-            mask = np.array([i & 0b0010 for i in self.paths])
+            mask = np.array([i & 0b00010 for i in self.paths])
             val = 2
         elif path == "r":
-            mask = np.array([i & 0b0100 for i in self.paths])
+            mask = np.array([i & 0b00100 for i in self.paths])
             val = 4
         elif path == "g":
-            mask = np.array([i & 0b1000 for i in self.paths])
+            mask = np.array([i & 0b01000 for i in self.paths])
             val = 8
+        elif path == "e":
+            mask = np.array([i & 0b10000 for i in self.paths])
+            val = 16
         else:
             return "Invalid path"
 
         ts = self.poses[:, 0][mask == val]
-        rs = self.poses[:, 1][mask == val]
-        predicted_ts = self.t_geodesic(rs)
-        result = np.sum((predicted_ts - ts) ** 2) / ts.shape[0]
+        xs = self.poses[:, 1][mask == val]
+        predicted_xs = geodesic(ts)
+        result = np.sum((predicted_xs - xs) ** 2) / xs.shape[0]
         return result
 
 
@@ -401,9 +393,15 @@ if __name__ == "__main__":
     print(time.time() - start)
     start = time.time()
 
-    #print(net.coord_dist("l"))
+    print("===================PATH MEAN VARIANCES====================")
+    print(f"longest: {net.coord_dist('l')}")
+    print(f"euclidean: {net.coord_dist('e')}")
+    print(f"shortest: {net.coord_dist('s')}")
+    print(f"greedy: {net.coord_dist('g')}")
+    print(f"random: {net.coord_dist('r')}")
+    print("==========================================================")
 
     plt.figure(figsize=(6, 8))
-    net.plot(show_paths=True, show_geodesic=False)
+    net.plot(show_paths=True, show_geodesic=True)
     plt.legend()
     plt.show()

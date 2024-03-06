@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_bvp
+from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
 # Boundary condition variables
@@ -9,15 +10,15 @@ t_final, x_final = 10, 10  # Final coordinates
 
 # Define the conformal factor Omega(t, x) and its derivatives
 def Omega(t, x):
-    return (x * t) ** 2
+    return (x * t) ** 4
 
 
 def dOmega_dt(t, x):
-    return 2 * (x * t) * x
+    return 4 * (x * t)**3 * x
 
 
 def dOmega_dx(t, x):
-    return 2 * (x * t) * t
+    return 4 * (x * t)**3 * t
 
 
 # Geodesic equations for BVP: corrected to properly handle the state vector y
@@ -56,16 +57,17 @@ y_guess[1] = np.linspace(x_initial, x_final, tau.size)  # Guess for x
 
 # Solve the BVP
 solution = solve_bvp(geodesic_equations_bvp, boundary_conditions, tau, y_guess)
-print(solution.y[0]) # final ts
-print(solution.y[1]) # finals xs
+# print(solution.y[0]) # final ts
+# print(solution.y[1]) # finals xs
 
+geodesic = CubicSpline(solution.y[0], solution.y[1])
 
 # Check if the solution was successful and evaluate it
-if solution.success:
-    tau_eval = np.linspace(0, 10, 1000)
-    t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
-    plt.plot(x_eval, t_eval)
-    plt.show()
-    print("Solution found!")
-else:
-    print("Solution not found. Consider adjusting the initial guess or the mesh.")
+# if solution.success:
+#     tau_eval = np.linspace(0, 10, 1000)
+#     t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
+#     plt.plot(x_eval, t_eval)
+#     plt.show()
+#     print("Solution found!")
+# else:
+#     print("Solution not found. Consider adjusting the initial guess or the mesh.")

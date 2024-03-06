@@ -535,7 +535,7 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
         path = os.getcwd().split("src")[0]
         filename = f"{path}/json_results/temp/{str(thread)}"
 
-        dict_to_save = graph.to_paths_info(n_name=n_named)
+        dict_to_save = graph.to_paths_info(n_named=n_named)
 
         append_json_lines(filename, dict_to_save)
         del graph
