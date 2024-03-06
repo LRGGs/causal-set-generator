@@ -542,7 +542,7 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
         return graph
 
 
-def multi_run(n, r, d, iters, k):
+def multi_run(n, r, d, iters):
     new_file = file_namer(n, r, d, iters, json=True)
     # path = getcwd().split("src")[0]
     # new_file = f"{path}/results/temp/{k}"
