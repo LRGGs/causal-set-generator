@@ -9,15 +9,15 @@ t_final, x_final = 10, 10  # Final coordinates
 
 # Define the conformal factor Omega(t, x) and its derivatives
 def Omega(t, x):
-    return x * t
+    return (x * t) ** 2
 
 
 def dOmega_dt(t, x):
-    return x
+    return 2 * (x * t) * x
 
 
 def dOmega_dx(t, x):
-    return t
+    return 2 * (x * t) * t
 
 
 # Geodesic equations for BVP: corrected to properly handle the state vector y
@@ -29,8 +29,8 @@ def geodesic_equations_bvp(tau, y):
     domega_dx = dOmega_dx(t, x)
 
     # The derivatives of our state vector components
-    d2t_dtau2 = (dt_dtau ** 2 * domega_dt / 2 - dx_dtau * dt_dtau * domega_dx - domega_dx * dx_dtau * dx_dtau / 2) / omega
-    d2x_dtau2 = (- dx_dtau ** 2 * domega_dx / 2 - dx_dtau * dt_dtau * domega_dt - domega_dt * dt_dtau * dt_dtau / 2) / omega
+    d2t_dtau2 = (dt_dtau ** 2 * domega_dt / 2 + dx_dtau * dt_dtau * domega_dx - domega_dt * dx_dtau ** 2 / 2) / omega
+    d2x_dtau2 = (- dx_dtau ** 2 * domega_dx / 2 - dx_dtau * dt_dtau * domega_dt - domega_dx * dt_dtau ** 2 / 2) / omega
     return np.vstack((dt_dtau, dx_dtau, d2t_dtau2, d2x_dtau2))
 
 
