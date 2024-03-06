@@ -583,7 +583,7 @@ def main():
     # path = os.getcwd().split("src")[0]
     # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    multi_run(nrange(500, 6000, 100), 0.1, 2, 50)
+    multi_run(nrange(500, 6000, 10), 0.1, 2, 5)
     # run(10000, 0.2, 3, j=False)
 
     print(time.time() - start)

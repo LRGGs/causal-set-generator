@@ -184,7 +184,7 @@ class Network:
             path.append(next_node)
             node = next_node
 
-        self.paths[path] = self.paths[path] | 0b0001
+        self.paths[path] = self.paths[path] | 0b00001
 
     def shortest_path(self):
         path = [0]  # start at 0th node
@@ -200,7 +200,7 @@ class Network:
             path.append(next_node)
             node = next_node
 
-        self.paths[path] = self.paths[path] | 0b0010
+        self.paths[path] = self.paths[path] | 0b00010
 
     def random_path(self):
         path = [0]  # start at 0th node
@@ -213,7 +213,7 @@ class Network:
             path.append(next_node)
             node = next_node
 
-        self.paths[path] = self.paths[path] | 0b0100
+        self.paths[path] = self.paths[path] | 0b00100
 
     def greedy_path(self):
         path = [0]  # start at 0th node
@@ -230,7 +230,24 @@ class Network:
             path.append(next_node)
             node = next_node
 
-        self.paths[path] = self.paths[path] | 0b1000
+        self.paths[path] = self.paths[path] | 0b01000
+
+    def greedy_path_euc(self):
+        path = [0]  # start at 0th node
+        node = 0
+        while node != self.n - 1:
+            child_intervals = [
+                (int(child), self.separation2(self.poses[int(child)], self.poses[node]))
+                for child in self.children[node]
+                if int(child) in self.connected_interval
+            ]
+            # Maximum interval square = Minimum proper time
+            # Greedy path algo tries to make longest path, so it will take smallest proper time step
+            next_node = min(child_intervals, key=lambda l: l[1])[0]
+            path.append(next_node)
+            node = next_node
+
+        self.paths[path] = self.paths[path] | 0b10000
 
     def interval2(self, p2, p1):
         dx = p2 - p1
@@ -238,6 +255,13 @@ class Network:
         t = (p1[0] + p2[0]) / 2
         metric = self.metric * (x * t)**2
         return metric @ dx @ dx
+
+
+    def separation2(self, p2, p1):
+        dx = p2 - p1
+
+        return dx @ dx
+
 
     def depth_first_search(self, node, vis, depths, children, true_nodes):
         vis[node] = True
@@ -271,16 +295,19 @@ class Network:
         plt.plot(self.poses[:, 1], self.poses[:, 0], "g.")
 
         if show_paths:
-            s_mask = np.array([i & 0b0010 for i in self.paths])
+            s_mask = np.array([i & 0b00010 for i in self.paths])
             plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co")
 
-            r_mask = np.array([i & 0b0100 for i in self.paths])
+            r_mask = np.array([i & 0b00100 for i in self.paths])
             plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro")
 
-            g_mask = np.array([i & 0b1000 for i in self.paths])
-            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-ko")
+            g_mask = np.array([i & 0b01000 for i in self.paths])
+            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-mo")
 
-            l_mask = np.array([i & 0b0001 for i in self.paths])
+            e_mask = np.array([i & 0b10000 for i in self.paths])
+            plt.plot(self.poses[:, 1][e_mask == 16], self.poses[:, 0][e_mask == 16], "-ko")
+
+            l_mask = np.array([i & 0b00001 for i in self.paths])
             plt.plot(self.poses[:, 1][l_mask == 1], self.poses[:, 0][l_mask == 1], "-bo")
         if show_geodesic:
             rs = np.linspace(14.4247, 36, 1000)
@@ -334,7 +361,7 @@ class Network:
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-    net = Network(1000, 2)
+    net = Network(5000, 2)
 
     start = time.time()
 
@@ -367,6 +394,10 @@ if __name__ == "__main__":
     start = time.time()
 
     net.shortest_path()
+    print(time.time() - start)
+    start = time.time()
+
+    net.greedy_path_euc()
     print(time.time() - start)
     start = time.time()
 
