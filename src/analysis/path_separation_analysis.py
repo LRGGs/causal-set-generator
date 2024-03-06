@@ -42,11 +42,13 @@ def separation_from_geodesic_by_path(graphs):
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
         for graph in graphs:
-            if graph["n"] <= 6000:
-            # n_seps[graph["n"]].append(
-            #     np.mean([pos[1]**2 for pos in graph["paths"][path]])
+            n_seps[graph["n"]].append(
+                np.mean([pos[1]**2 for pos in graph["paths"][path]])
+            )
+            # n_errs[graph["n"]].append(
+            #     np.std([pos[1]**2 for pos in graph["paths"][path]])/np.sqrt(len(graph["paths"][path]))
             # )
-                n_seps[graph["n"]] += [pos[1] ** 2 for pos in graph["paths"][path]]
+            # n_seps[graph["n"]] += [pos[1] ** 2 for pos in graph["paths"][path]]
 
         x_data = list(n_seps.keys())
         y_data = [np.mean(v) for v in n_seps.values()]
@@ -61,9 +63,9 @@ def separation_from_geodesic_by_path(graphs):
         #         y_err_weights.append((y_err[i]*poisson.pmf(x_i, n))**2)
         #     y_data[j] = sum(y_weights)
         #     y_err[j] = np.sqrt(sum(y_err_weights))
-        #
+
         # cut = 5
-        # x_data, y_data, y_err = x_data[cut:], y_data[cut:], y_err[cut:]
+        # x_data, y_data, y_err = x_data[cut:-cut], y_data[cut:-cut], y_err[cut:-cut]
 
         if path == "greedy_m":
             ax.errorbar(
@@ -105,7 +107,7 @@ def separation_from_geodesic_by_path(graphs):
 
     ax.set_xlabel("$N$", fontsize=16)
     ax.set_ylabel(r"$\langle \sigma^2 \rangle$", fontsize=16)
-    ax_res.set_ylim(-0.002, 0.002)
+    # ax_res.set_ylim(-0.002, 0.002)
     ax.set_yscale("log")
     # ax.set_xscale("log")
 
@@ -175,7 +177,7 @@ def separation_from_geodesic_by_path(graphs):
 
 if __name__ == "__main__":
     res, xs = [], []
-    graphs = read_file(nrange(500, 6000, 100), 0.1, 2, 50, extra="paths")
+    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
     r, x = separation_from_geodesic_by_path(graphs)
     res += r
     xs.append(x)
@@ -184,8 +186,8 @@ if __name__ == "__main__":
     # res += r
     # xs.append(x)
     # i = 0
-    plt.plot(xs[0], np.abs(res[0]), label="long")
-    plt.plot(xs[0], np.abs(res[1]), "--", label="euc")
-    plt.tight_layout()
-    plt.legend()
-    plt.show()
+    # plt.plot(xs[0], np.abs(res[0]), label="long")
+    # plt.plot(xs[0], np.abs(res[1]), "--", label="euc")
+    # plt.tight_layout()
+    # plt.legend()
+    # plt.show()

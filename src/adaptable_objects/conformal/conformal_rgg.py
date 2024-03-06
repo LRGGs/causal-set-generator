@@ -77,8 +77,8 @@ class Network:
         self.depths = np.zeros(self.n)
         self.heights = np.zeros(self.n)
 
-        self.source = [5, 10]
-        self.sink = [10, 10]
+        self.source = [5, 5]
+        self.sink = [10, 5]
 
     # GENERATE AND CONNECT
 
@@ -87,11 +87,12 @@ class Network:
         np.random.seed(random.randint(0, 16372723))
 
         def f(x):
-            vol = x ** 4
+            vol = x**2
             return vol
 
         # Generate uniform points in desired region
-        x = np.linspace(7.5, 12.5, 1000000)
+        spread = (self.sink[0] - self.source[0])/2
+        x = np.linspace(self.source[1] - spread, self.sink[1] + spread, 1000000)
 
         y_x = f(x)
         ycdf_x = y_x.cumsum()
@@ -99,27 +100,36 @@ class Network:
         inv_cdf_x = CubicSpline(ycdf_x, x)
 
         def g(t):
-            vol = t ** 4
+            vol = t**2
             return vol
 
         # Generate uniform points in desired region
-        t = np.linspace(5, 10, 1000000)
+        t = np.linspace(self.source[0], self.sink[0], 1000000)
 
         y_t = g(t)
         ycdf_t = y_t.cumsum()
         ycdf_t = ycdf_t / ycdf_t[-1]
         inv_cdf_t = CubicSpline(ycdf_t, t)
 
-        u_poses = np.random.uniform(0, 1, size=(self.n - 2))
-        v_poses = np.random.uniform(0, 1, size=(self.n - 2))
+        x_poses = []
+        t_poses = []
+        good_n = 0
+        while good_n < self.n - 2:
+            u_poses = np.random.random_sample()
+            v_poses = np.random.random_sample()
 
-        x_poses = inv_cdf_x(u_poses)
-        t_poses = inv_cdf_t(v_poses)
+            x_pos = inv_cdf_x(u_poses)
+            t_pos = inv_cdf_t(v_poses)
+
+            c1 = -(self.source[0] - t_pos)**2 + (self.source[1] - x_pos)**2
+            c2 = -(self.sink[0] - t_pos)**2 + (self.sink[1] - x_pos)**2
+
+            if c1 <= 0 and c2 <= 0:
+                x_poses.append(x_pos)
+                t_poses.append(t_pos)
+                good_n += 1
 
         square_poses = np.dstack((t_poses, x_poses))[0]
-        c1 = square_poses[:, 0] + square_poses[:, 1]
-        c2 = square_poses[:, 0] - square_poses[:, 1]
-        square_poses = square_poses[(c1 > 15) & (c1 < 20) & (c2 > -5) & (c2 < 0)]
         source_sink = np.array([self.source, self.sink])
         square_poses = np.append(square_poses, source_sink, axis=0)
 
@@ -353,7 +363,7 @@ class Network:
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-    net = Network(5000, 2)
+    net = Network(20000, 2)
 
     start = time.time()
 

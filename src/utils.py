@@ -78,13 +78,13 @@ def append_json_lines(filename, new_data):
 
     Args:
         filename (str): The name of the JSON Lines file.
-        new_data (dict): The new JSON object to append.
+        new_data (dict): The N-(500-6000)x100__R-0-1__D-2__I-100_paths.json JSON object to append.
     """
     exists = os.path.exists(filename)
     with open(filename, 'a' if os.path.exists(filename) else 'w') as file:
         json_string = json.dumps(new_data)  # Convert data to JSON string
         if not exists:  # Check if file exists
-            file.write("[" + '\n')  # Write opening square bracket if new file
+            file.write("[" + '\n')  # Write opening square bracket if N-(500-6000)x100__R-0-1__D-2__I-100_paths.json file
             file.write(json_string)  # Append to file with newline
         else:
             file.write("," + "\n" + json_string)

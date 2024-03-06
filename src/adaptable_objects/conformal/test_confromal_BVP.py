@@ -4,21 +4,21 @@ from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
 # Boundary condition variables
-t_initial, x_initial = 5, 10  # Initial coordinates
-t_final, x_final = 10, 10  # Final coordinates
+t_initial, x_initial = 5, 5  # Initial coordinates
+t_final, x_final = 10, 5  # Final coordinates
 
 
 # Define the conformal factor Omega(t, x) and its derivatives
 def Omega(t, x):
-    return (x * t) ** 4
+    return (x * t) **2
 
 
 def dOmega_dt(t, x):
-    return 4 * (x * t)**3 * x
+    return 2 * (x * t) * x
 
 
 def dOmega_dx(t, x):
-    return 4 * (x * t)**3 * t
+    return 2 * (x * t) * t
 
 
 # Geodesic equations for BVP: corrected to properly handle the state vector y
@@ -42,15 +42,16 @@ def boundary_conditions(ya, yb):
 
 
 # Initial mesh of points where the solution is approximated
-tau = np.linspace(0, 10, 1000)
+tau = np.linspace(0, 14.7, 1000)
+
 
 # Initial guess for the solution at these points
 # Adjusted to include guesses for both positions and their derivatives
 y_guess = np.zeros((4, tau.size))  # 4 for t, x, dt/dtau, dx/dtau
 y_guess[0] = np.linspace(t_initial, t_final, tau.size)  # Guess for t
 y_guess[1] = np.linspace(x_initial, x_final, tau.size)  # Guess for x
-#y_guess[2] = np.array([1 for i in tau])
-#y_guess[3] = np.array([1e-2 if i < 5 else -1e-2 for i in tau])
+# y_guess[2] = np.array([1 for i in tau])
+# y_guess[3] = np.array([1 if i < int(tau.size * 0.6) else -1 for i in tau])
 #print(y_guess)
 # Assuming initial guesses for derivatives (dt/dtau, dx/dtau) as zeros
 # Modify these guesses if you have better estimates
@@ -63,11 +64,12 @@ solution = solve_bvp(geodesic_equations_bvp, boundary_conditions, tau, y_guess)
 geodesic = CubicSpline(solution.y[0], solution.y[1])
 
 # Check if the solution was successful and evaluate it
-# if solution.success:
-#     tau_eval = np.linspace(0, 10, 1000)
-#     t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
-#     plt.plot(x_eval, t_eval)
-#     plt.show()
-#     print("Solution found!")
-# else:
-#     print("Solution not found. Consider adjusting the initial guess or the mesh.")
+if solution.success:
+    tau_eval = tau
+    t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
+    #plt.plot(x_eval, t_eval)
+    #print(max(x_eval))
+    #plt.show()
+    print("Solution found!")
+else:
+    print("Solution not found. Consider adjusting the initial guess or the mesh.")
