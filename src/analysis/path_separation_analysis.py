@@ -42,10 +42,11 @@ def separation_from_geodesic_by_path(graphs):
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
         for graph in graphs:
+            if graph["n"] <= 6000:
             # n_seps[graph["n"]].append(
             #     np.mean([pos[1]**2 for pos in graph["paths"][path]])
             # )
-            n_seps[graph["n"]] += [pos[1] ** 2 for pos in graph["paths"][path]]
+                n_seps[graph["n"]] += [pos[1] ** 2 for pos in graph["paths"][path]]
 
         x_data = list(n_seps.keys())
         y_data = [np.mean(v) for v in n_seps.values()]
@@ -174,7 +175,7 @@ def separation_from_geodesic_by_path(graphs):
 
 if __name__ == "__main__":
     res, xs = [], []
-    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
+    graphs = read_file(nrange(500, 6000, 100), 0.1, 2, 50, extra="paths")
     r, x = separation_from_geodesic_by_path(graphs)
     res += r
     xs.append(x)

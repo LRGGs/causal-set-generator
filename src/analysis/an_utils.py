@@ -195,7 +195,7 @@ class Data:
 
 
 if __name__ == "__main__":
-    graphs = read_file(1, 1, 1, 1, specific="partial.json")
+    graphs = read_file(1, 1, 1, 1, specific="N-(500-6000)x100__R-0-1__D-2__I-50_paths.json")
     info = defaultdict(int)
     for g in graphs:
         info[g["n"]] += 1

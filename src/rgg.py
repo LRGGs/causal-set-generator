@@ -463,11 +463,12 @@ class Graph:
             "weight_collections": self.weight_collections(),
         }
 
-    def to_paths_info(self):
-        return {"n": len(self.nodes), "paths": self.paths_info()}
+    def to_paths_info(self, n_named=False):
+        return {"n": len(self.nodes) if not n_named else n_named, "paths": self.paths_info()}
 
 
 def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
+    n_named = n
     n = np.random.poisson(n)
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
@@ -534,7 +535,7 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
         path = os.getcwd().split("src")[0]
         filename = f"{path}/json_results/temp/{str(thread)}"
 
-        dict_to_save = graph.to_paths_info()
+        dict_to_save = graph.to_paths_info(n_name=n_named)
 
         append_json_lines(filename, dict_to_save)
         del graph
@@ -583,7 +584,7 @@ def main():
     # path = os.getcwd().split("src")[0]
     # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    multi_run(nrange(500, 6000, 10), 0.1, 2, 5)
+    multi_run(nrange(500, 6000, 100), 0.1, 2, 50)
     # run(10000, 0.2, 3, j=False)
 
     print(time.time() - start)
