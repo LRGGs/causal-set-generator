@@ -51,12 +51,25 @@ def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
         legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$"
         if not ax:
-            l, = plt.plot(x_data, y_fit, label=legend)
+            (l,) = plt.plot(x_data, y_fit, label=legend)
         else:
             if path == "longest":
-                l, = ax.plot(x_data, y_fit, label=legend, zorder=4, color="black", )
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
             if path == "greedy_e":
-                l, = ax.plot(x_data, y_fit, linestyle="dashed", label=legend, zorder=4, color="black")
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    linestyle="dashed",
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
         return l, legend, y_fit
 
 
@@ -181,7 +194,7 @@ class Data:
                 raise TypeError(f"invalid data type: {type(attr)} for {attr}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     graphs = read_file(1, 1, 1, 1, specific="partial.json")
     info = defaultdict(int)
     for g in graphs:

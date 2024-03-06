@@ -8,8 +8,8 @@ import numpy as np
 
 def file_clean_up(temp_file, new_file):
     for file in os.listdir(temp_file):
-        with open(f"{temp_file}{file}", "a") as f:
-            f.write(']')
+        # with open(f"{temp_file}{file}", "a") as f:
+        #     f.write(']')
         with open(f"{temp_file}{file}", "r+") as f:
             print(file)
             data = json.load(f)
@@ -90,11 +90,11 @@ def append_json_lines(filename, new_data):
             file.write("," + "\n" + json_string)
 
 
-def file_namer(n, r, d, iters, extra=None, json=False):
+def file_namer(n, r, d, iters, extra=None, json=False, temp=False):
     path = getcwd().split("src")[0]
 
     return (
-        f"{path}/results/N-{n if not isinstance(n, list) else '(' + str(min(n)) + '-' + str(max(n)) + ')x' + str(len(n))}"
+        f"{path}/results/{'temp/' if temp else ''}N-{n if not isinstance(n, list) else '(' + str(min(n)) + '-' + str(max(n)) + ')x' + str(len(n))}"
         f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('(' + str(min(r)) + '-' + str(max(r)) + ')x' + str(len(r))).replace('.', '-')}"
         f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
         f"__I-{iters}{'_' + extra if extra else ''}.{'json' if json else 'pkl'}"

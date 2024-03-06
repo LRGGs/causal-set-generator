@@ -77,7 +77,7 @@ class Graph:
         e = time.time()
         self.greedy_path_min()
         f = time.time()
-        self.greedy_path_opt()
+        # self.greedy_path_opt()
         g = time.time()
         if timing:
             print(f"longest: {b - a}")
@@ -467,14 +467,15 @@ class Graph:
         return {"n": len(self.nodes), "paths": self.paths_info()}
 
 
-def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True):
+def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
+    n = np.random.poisson(n)
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
     # update_status(i + 1, "yellow")
-    graph.configure_graph(seed=seed)
+    graph.configure_graph(seed=seed, timing=t)
     print(f"{bcolors.OKBLUE} Graph {i}: CONFIGURED {bcolors.ENDC}")
     # update_status(i + 1, "blue")
-    graph.find_paths()
+    graph.find_paths(timing=t)
     print(f"{bcolors.OKGREEN} Graph {i}: PATHED {bcolors.ENDC}")
     # update_status(i + 1, "green")
 
@@ -543,6 +544,9 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True):
 
 def multi_run(n, r, d, iters):
     new_file = file_namer(n, r, d, iters, json=True)
+    # path = getcwd().split("src")[0]
+    # new_file = f"{path}/results/temp/{k}"
+
     if os.path.exists(new_file):
         raise FileExistsError(f"File '{new_file}' already exists.")
 
@@ -576,13 +580,11 @@ def multi_run(n, r, d, iters):
 
 def main():
     start = time.time()
+    # path = os.getcwd().split("src")[0]
+    # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    # multi_run([500, 696, 893, 1090, 1287, 1484, 1681, 1878, 2075, 2272, 2469, 2666, 2863, 3060, 3257, 3454, 3651, 3848, 4045, 4242, 4439, 4636, 4833], 0.1, 2, 100)
-    # multi_run([5030, 5227, 5424, 5621, 5818, 6015, 6212, 6409, 6606, 6803, 7000, 7196, 7393, 7590, 7787, 7984, 8181, 8378, 8575, 8772, 8969, 9166, 9363, 9560, 9757, 9954, 10151, 10348, 10545, 10742, 10939, 11136, 11333, 11530, 11727, 11924, 12121], 0.1, 2, 100)
-    # multi_run([12318, 12515, 12712, 12909, 13106, 13303, 13500, 13696, 13893, 14090, 14287, 14484, 14681, 14878, 15075, 15272, 15469, 15666, 15863, 16060, 16257, 16454, 16651, 16848, 17045, 17242, 17439], 0.1, 2, 100)
-    # multi_run([17636, 17833, 18030, 18227, 18424, 18621, 18818, 19015, 19212, 19409, 19606, 19803, 20000], 0.1, 2, 100)
-
-    # run(1000, 0.2, 2, 1, g=False, m=True)
+    multi_run(nrange(500, 6000, 100), 0.1, 2, 50)
+    # run(10000, 0.2, 3, j=False)
 
     print(time.time() - start)
 
