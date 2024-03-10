@@ -11,7 +11,7 @@ n_range = (
         [n for n in range(3, 2004, 10)]
 )
 # n = 1000
-r = 1.5
+r = 2
 d = 2
 
 def run(n, r):  # Generating dataframe of one network
@@ -23,9 +23,9 @@ def run(n, r):  # Generating dataframe of one network
 
 
 for experiment in tqdm(range(n_experiments)):
+    multiprocessing.set_start_method("forkserver")
 
     # Run in parallel for different inputs
-
     cpus = multiprocessing.cpu_count() - 1
     p = multiprocessing.Pool(processes=cpus)
 
@@ -33,7 +33,7 @@ for experiment in tqdm(range(n_experiments)):
 
     results = p.starmap(run, inputs)  # list of dataframes
 
-    with open(file_namer(n_range, r, d, experiment + 15, folder), "wb") as fp:
+    with open(file_namer(n_range, r, d, experiment, folder), "wb") as fp:
         pickle.dump(results, fp)
 
     del results  # free up RAM

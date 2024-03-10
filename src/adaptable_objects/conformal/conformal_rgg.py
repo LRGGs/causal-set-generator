@@ -10,7 +10,7 @@ from numba.typed import List
 import numba.np.arraymath
 import networkx as nx
 from scipy.interpolate import CubicSpline
-from adaptable_objects.conformal.test_confromal_BVP import geodesic
+from test_confromal_BVP import geodesic
 
 @njit()
 def numba_edges(nodes, metric):
@@ -363,7 +363,7 @@ class Network:
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-    net = Network(20000, 2)
+    net = Network(5000, 2)
 
     start = time.time()
 

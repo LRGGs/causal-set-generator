@@ -193,32 +193,3 @@ plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000, bbox_inches="tigh
 # ax.set_ylabel('Error',fontsize = 20)
 #
 # plt.show()
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
