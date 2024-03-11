@@ -7,12 +7,18 @@ from iminuit.cost import LeastSquares
 from iminuit import Minuit
 
 
-def fit(x, a, b, c):
-    return a / np.sqrt(x) + b * x**(-c)
+# def fit(x, par):
+#     temp = par[0] * np.sqrt(x) * (1 + par[1] * x ** (-par[2]))
+#     return 1 / (temp + par[3])
+def fit(x, par):
+    temp = par[0] * np.sqrt(x) * (1 + par[1] * x ** (-par[2]))
+    return 1 / temp
+# def fit(x, par):
+#     temp = par[0] / np.sqrt(x) + par[1] * x ** (-par[2])
+#     return temp
 
-
-def fit_pur(x, a):
-    return a / np.sqrt(x)
+# def fit_pur(x, a):
+#     return a / np.sqrt(x)
 
 
 # EXTRACTION
@@ -70,46 +76,49 @@ n_range = np.array(range(100, 1001, 50))
 
 
 # FITTING
+fit_params = (2, 1, 0.66)
 
 least_squares_fit_l = LeastSquares(n_range, rs_l_means, rs_l_err, fit)
-m_fit_l = Minuit(least_squares_fit_l, a=0.5, b=1.2, c=1.19)
+m_fit_l = Minuit(least_squares_fit_l, fit_params)
 m_fit_l.migrad()
 m_fit_l.hesse()
 print(m_fit_l)
-a_l = m_fit_l.params[0].value
-aerr_l_l = m_fit_l.params[0].error
-b_l = m_fit_l.params[1].value
-berr_l = m_fit_l.params[1].error
-c_l = m_fit_l.params[2].value
-cerr_l = m_fit_l.params[2].error
+# a_l = m_fit_l.params[0].value
+# aerr_l_l = m_fit_l.params[0].error
+# b_l = m_fit_l.params[1].value
+# berr_l = m_fit_l.params[1].error
+# c_l = m_fit_l.params[2].value
+# cerr_l = m_fit_l.params[2].error
 red_chi_l = m_fit_l.fval / m_fit_l.ndof
 print(m_fit_l.fval, m_fit_l.ndof)
 
+
 least_squares_fit_u = LeastSquares(n_range, rs_u_means, rs_u_err, fit)
-m_fit_u = Minuit(least_squares_fit_u, a=0.5, b=1.2, c=1.19)
+m_fit_u = Minuit(least_squares_fit_u, fit_params)
 m_fit_u.migrad()
 m_fit_u.hesse()
 print(m_fit_u)
-a_u = m_fit_u.params[0].value
-aerr_u = m_fit_u.params[0].error
-b_u = m_fit_u.params[1].value
-berr_u = m_fit_u.params[1].error
-c_u = m_fit_u.params[2].value
-cerr_u = m_fit_u.params[2].error
+# a_u = m_fit_u.params[0].value
+# aerr_u = m_fit_u.params[0].error
+# b_u = m_fit_u.params[1].value
+# berr_u = m_fit_u.params[1].error
+# c_u = m_fit_u.params[2].value
+# cerr_u = m_fit_u.params[2].error
 red_chi_u = m_fit_u.fval / m_fit_u.ndof
 print(m_fit_u.fval, m_fit_u.ndof)
 
+
 least_squares_fit = LeastSquares(n_range, rs_means, rs_err, fit)
-m_fit = Minuit(least_squares_fit, a=0.5, b=1.2, c=1.19)
+m_fit = Minuit(least_squares_fit, fit_params)
 m_fit.migrad()
 m_fit.hesse()
 print(m_fit)
-a = m_fit.params[0].value
-aerr = m_fit.params[0].error
-b = m_fit.params[1].value
-berr = m_fit.params[1].error
-c = m_fit.params[2].value
-cerr = m_fit.params[2].error
+# a = m_fit.params[0].value
+# aerr = m_fit.params[0].error
+# b = m_fit.params[1].value
+# berr = m_fit.params[1].error
+# c = m_fit.params[2].value
+# cerr = m_fit.params[2].error
 red_chi = m_fit.fval / m_fit.ndof
 print(m_fit.fval, m_fit.ndof)
 
@@ -120,9 +129,9 @@ ax = fig.add_subplot(111)
 ax.grid()
 
 xs = np.linspace(40, 1050, 1000)
-ax.fill_between(xs, fit(xs, a_u, b_u, c_u), fit(xs, a_l, b_l, c_l),
+ax.fill_between(xs, fit(xs, m_fit_u.values), fit(xs, m_fit_l.values),
                 alpha=0.2, label="Transition Region")
-ax.plot(xs, fit(xs, a, b, c), color='black',
+ax.plot(xs, fit(xs, m_fit.values), color='black',
         label="Fit $R = aN^{-\dfrac{1}{2}} + bN^{-c}$, " +
               #"\n"
               #"$a = {:.3f} \pm {:.3f}$, "
@@ -154,38 +163,40 @@ ax.set_xlim(80, 1020)
 
 plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
 plt.show()
+plt.clf()
 
 # Full transition analysis
-
-r_range = np.linspace(0.0, 1.0, 100001)
-
-all_sample_probs = []
-for sample in range(3):
-    probs = []
-    for n in range(19):
-        raw_run = np.array(trans_data[0][n])
-
-        if n <= 2:
-            start_index = int(r_range.shape[0] * 15 / 1001)
-        elif n <= 4:
-            start_index = int(r_range.shape[0] * 10 / 1001)
-        elif n <= 8:
-            start_index = int(r_range.shape[0] * 8 / 1001)
-        else:
-            start_index = int(r_range.shape[0] * 1 / 1001)
-
-        aligned_probs = np.zeros_like(r_range)
-        aligned_probs[start_index: start_index + raw_run.shape[0]] = raw_run[:, 0]
-        aligned_probs[start_index + raw_run.shape[0]:] = np.nan
-        probs.append(aligned_probs)
-    all_sample_probs.append(probs)
-
-cond_prob = np.array(all_sample_probs)
-cond_prob_means = np.mean(cond_prob, axis=0)
-cond_prob_std = np.std(cond_prob, axis=0)
-
-plt.errorbar(np.sqrt(1000) * r_range, cond_prob_means[18], yerr=cond_prob_std[18], fmt="r,")
-plt.errorbar(np.sqrt(100) * r_range, cond_prob_means[0], yerr=cond_prob_std[0], fmt="b,")
-
-#plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
-plt.show()
+#
+# r_range = np.linspace(0.0, 1.0, 100001)
+#
+# all_sample_probs = []
+# for sample in range(3):
+#     probs = []
+#     for n in range(19):
+#         raw_run = np.array(trans_data[0][n])
+#
+#         if n <= 2:
+#             start_index = int(r_range.shape[0] * 15 / 1001)
+#         elif n <= 4:
+#             start_index = int(r_range.shape[0] * 10 / 1001)
+#         elif n <= 8:
+#             start_index = int(r_range.shape[0] * 8 / 1001)
+#         else:
+#             start_index = int(r_range.shape[0] * 1 / 1001)
+#
+#         aligned_probs = np.zeros_like(r_range)
+#         aligned_probs[start_index: start_index + raw_run.shape[0]] = raw_run[:, 0]
+#         aligned_probs[start_index + raw_run.shape[0]:] = np.nan
+#         probs.append(aligned_probs)
+#     all_sample_probs.append(probs)
+#
+# cond_prob = np.array(all_sample_probs)
+# cond_prob_means = np.mean(cond_prob, axis=0)
+# cond_prob_std = np.std(cond_prob, axis=0)
+#
+# plt.errorbar(np.sqrt(1000) * r_range, cond_prob_means[18], yerr=cond_prob_std[18], fmt="r,")
+# plt.errorbar(np.sqrt(100) * r_range, cond_prob_means[0], yerr=cond_prob_std[0], fmt="b,")
+#
+# #plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
+# plt.show()
+# plt.clf()
