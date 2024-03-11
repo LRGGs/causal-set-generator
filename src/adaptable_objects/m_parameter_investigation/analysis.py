@@ -19,7 +19,15 @@ def fit_2(x, m):
     return 1 / (m * np.sqrt(x))
 
 def fit_3(x, par):
-    ans = (2 * np.sqrt(x))*(1 - 0.22 * x ** (-1 / 3) + par[0] * x ** (par[1]))
+    ans = (2 * np.sqrt(x))*(1 - 0.22 * x ** (-1 / 3) + par[0] * x ** (-par[1]))
+    return 1 / ans
+
+# def cut_fit(x, par):
+#     ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-1 / 3) + par[2] * x ** (-1/12))
+#     return 1 / ans
+
+def cut_fit(x, par):
+    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (par[2]))
     return 1 / ans
 
 
@@ -29,27 +37,34 @@ path = os.getcwd()
 data_dir = os.fsencode(f"{path}/results")
 
 extracted_data = []
+low_n = []
 for file in os.listdir(data_dir):
     file = file.decode("utf-8")
 
     with open(f"{path}/results/{file}", 'rb') as pickle_file:
         data = pickle.load(pickle_file)
-    extracted_data.append(data)
+    if "3-99" in file:
+        low_n.append(data)
+    else:
+        extracted_data.append(data)
+
 
 # DATA
-N = 10  # number of experiments
+
+N = 22  # number of experiments
 Nsqrt = np.sqrt(N)
 
 l = np.vstack(extracted_data)
-o_l = 1 / l
-l_means = np.mean(l, axis=0)
-l_err = np.std(l, axis=0)
-l_err /= Nsqrt
 
 o_l = 1 / l
-o_l_means = np.mean(o_l, axis=0)
 o_l_err = np.std(o_l, axis=0)
+o_l_mean = np.mean(o_l, axis=0)
 o_l_err /= Nsqrt
+
+l_means = np.mean(l, axis=0)
+l_err = np.std(l, axis=0)
+print(l_err)
+l_err /= Nsqrt
 
 n_range = np.array(range(100, 15001, 100))
 
@@ -57,11 +72,25 @@ n_range = np.array(range(100, 15001, 100))
 # plt.show()
 
 # LEAST SQUARES FIT
+#
+# fit_1_params = (2.1, -0.20, 0.33)
+# print(o_l_mean.shape, o_l_err.shape, len(n_range))
+# least_squares_fit_1 = LeastSquares(n_range, o_l_mean,
+#                                    o_l_err, fit_1)
+# m_fit_1 = Minuit(least_squares_fit_1, fit_1_params)
+# # m_fit_1.simplex()
+# m_fit_1.migrad()
+# m_fit_1.hesse()
+# print(m_fit_1)
+# m = m_fit_1.params[0].value
+# merr = m_fit_1.params[0].error
+# red_chi_1 = m_fit_1.fval / m_fit_1.ndof
+# print(m_fit_1.fval, m_fit_1.ndof)
 
-fit_1_params = (2, 1.5, 0.33)
+fit_1_params = (2, -0.22, 0.33)
 
 least_squares_fit_1 = LeastSquares(n_range, (1 / l_means),
-                                   (l_err / l_means ** 2), fit_1)
+                                   l_err / (l_means ** 2), fit_1)
 m_fit_1 = Minuit(least_squares_fit_1, fit_1_params)
 # m_fit_1.simplex()
 m_fit_1.migrad()
@@ -100,6 +129,41 @@ merr = m_fit_3.params[0].error
 red_chi_3 = m_fit_3.fval / m_fit_3.ndof
 print(m_fit_3.fval, m_fit_3.ndof)
 
+cut_fit_params = (2, 10, 0.33)
+cut1 = 0
+cut2 = 149
+least_squares_cut_fit = LeastSquares(n_range[cut1:cut2], (1 / l_means)[cut1:cut2],
+                                   (l_err / l_means ** 2)[cut1:cut2], fit_1)
+m_cut_fit = Minuit(least_squares_cut_fit, cut_fit_params)
+# m_cut_fit.simplex()
+m_cut_fit.migrad()
+m_cut_fit.hesse()
+print(m_cut_fit)
+m = m_cut_fit.params[0].value
+merr = m_cut_fit.params[0].error
+red_chi_cut_fit = m_cut_fit.fval / m_cut_fit.ndof
+print(m_cut_fit.fval, m_cut_fit.ndof)
+
+# # testing chi squared yourself
+# y = (1 / l_means)[cut1:cut2]
+# y_pred = fit_1(n_range[cut1:cut2], m_cut_fit.values)
+# error = (l_err / l_means ** 2)[cut1:cut2]
+# #print([float(abs(i)) for i in 1e4 * (y - y_pred)])
+# #print([float(abs(i)) for i in 1e4 * error])
+# #print(np.sum((y - y_pred)**2 / error**2))
+# #print(error.shape)
+
+# test chi squared using ALLLL values
+all_n = np.repeat(n_range[cut1:cut2], N)
+#print(all_n.shape)
+y_pred = fit_1(all_n, m_cut_fit.values)
+y = o_l[:,cut1:cut2].T.flatten()
+#print(y.shape)
+error = np.repeat((l_err * Nsqrt / l_means ** 2)[cut1:cut2], N)
+chi2 = np.sum((y - y_pred)**2 / error**2)
+df = y.shape[0] - len(m_cut_fit.values)
+red_chi2 = chi2 / df
+print(red_chi2, df, chi2)
 
 # PLOTTING
 
@@ -118,9 +182,10 @@ ax_res.set_ylabel('$\delta$', fontsize=20)
 residuals2 = np.abs(fit_2(n_range, m_fit_2.values) - 1 / l_means)
 residuals1 = np.abs(fit_1(n_range, m_fit_1.values) - 1 / l_means)
 
-ax_res.plot(n_range, residuals2, "k-", label='$\delta_1$ (Fit 1 Residuals)')
-ax_res.plot(n_range, residuals1, "b--", label='$\delta_2$ (Fit 2 Residuals)')
-
+ax_res.plot(n_range, residuals2, "k-", label='$|\delta_1|$ (Fit 1 Residuals)')
+ax_res.plot(n_range, residuals1, "b--", label='$|\delta_2|$ (Fit 2 Residuals)')
+ax_res.plot(n_range, l_err/l_means**2, "r-",
+            label=r'$|\delta_{\langle L \rangle^{-1}}|$ (Data Errors)')
 ax_res.legend(loc='upper right', fontsize=16, framealpha=1)
 ax_res.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
@@ -137,7 +202,7 @@ ax.plot(xs, fit_2(xs, m_fit_2.values), color='black', linewidth=1.2,
               " $(\chi^2_\\nu ={:.2f})$".format(red_chi_2)
         )
 ax.plot(xs, fit_1(xs, m_fit_1.values), "b--", linewidth=1.5,
-        label=r'Fit 2: $\langle L \rangle^ = m N^{\frac{1}{2}}$'
+        label=r'Fit 2: $\langle L \rangle = m N^{\frac{1}{2}}$'
               r'$(1 + aN^{-{\alpha}})$' +
               " $(\chi^2_\\nu ={:.2f})$".format(red_chi_1)
         # "\n"
@@ -182,10 +247,15 @@ ax.set_xlabel('N', fontsize=20)
 ax.set_ylabel(r"$\langle L \rangle^{-1}$", fontsize=20)
 
 ax.set_xlim(-10, 15100)
+# ax.set_xlim(n_range[cut1], n_range[cut2])
+# ax_res.set_yscale("log")
+#ax.set_yscale("log")
+#ax.set_xscale("log")
 
 plt.subplots_adjust(hspace=.0)  # remove distance between subplots
 plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000, bbox_inches="tight")
-#plt.show()
+plt.show()
+plt.clf()
 
 #
 #

@@ -19,22 +19,22 @@ def run(n):  # Generating dataframe of one network
 if __name__ == '__main__':
     multiprocessing.set_start_method("forkserver")
 
-    n_experiments = int(1e3)  # number of times we measure with the same parameters
-    n_range = [n for n in range(3, 101, 1)]
+    n_experiments = 10  # number of times we measure with the same parameters
+    n_range = [n for n in range(100, 15001, 100)]
     r = 2
     d = 2
 
     for experiment in tqdm(range(n_experiments)):
         # Run in parallel for different inputs
 
-        cpus = 1  #multiprocessing.cpu_count() - 1
+        cpus = 5 #multiprocessing.cpu_count() - 1
         p = multiprocessing.Pool(processes=cpus)
-        #results = p.map(run, n_range, 50)  # multiprocess different n
-        results = []
-        for result in p.imap(run, n_range, chunksize=1000):
-            results.append(result)
+        results = p.map(run, n_range, 50)  # multiprocess different n
+        # results = []
+        # for result in p.imap(run, n_range, chunksize=1000):
+        #     results.append(result)
 
-        with open(file_namer(n_range, r, d, experiment), "wb") as fp:
+        with open(file_namer(n_range, r, d, experiment + 20), "wb") as fp:
             pickle.dump(results, fp)
 
         del results  # free up RAM

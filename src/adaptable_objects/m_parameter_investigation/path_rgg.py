@@ -165,3 +165,25 @@ class Network:
             node = next_node
 
         return path
+
+if __name__ == "__main__":
+    # matplotlib.use("TkAgg")
+
+
+    net = Network(6000, 2, 2)
+
+    start = time.time()
+
+    net.generate()
+    print(time.time() - start)
+    start = time.time()
+
+    net.connect()
+    print(time.time() - start)
+    start = time.time()
+
+    net.length_of_longest()
+    print(time.time() - start)
+    start = time.time()
+
+    print("Longest =", net.lpath)
