@@ -363,11 +363,8 @@ class Network:
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-<<<<<<< HEAD
+
     net = Network(6000, 2)
-=======
-    net = Network(5000, 2)
->>>>>>> 5944151a04f24cc76e925d6de99bcc5a9a12dd98
 
     start = time.time()
 

@@ -10,7 +10,6 @@ import gc
 
 def run(n):  # Generating dataframe of one network
     # first argument is n and second is experiment
-    print(n)
     net = Network(n, r=2, d=2)
     net.generate()
     net.connect()
@@ -20,8 +19,8 @@ def run(n):  # Generating dataframe of one network
 if __name__ == '__main__':
     multiprocessing.set_start_method("forkserver")
 
-    n_experiments = 1  # number of times we measure with the same parameters
-    n_range = [n for n in range(15001, 30001, 100)]
+    n_experiments = int(1e3)  # number of times we measure with the same parameters
+    n_range = [n for n in range(3, 101, 1)]
     r = 2
     d = 2
 
@@ -34,8 +33,6 @@ if __name__ == '__main__':
         results = []
         for result in p.imap(run, n_range, chunksize=1000):
             results.append(result)
-
-        print(results)
 
         with open(file_namer(n_range, r, d, experiment), "wb") as fp:
             pickle.dump(results, fp)
