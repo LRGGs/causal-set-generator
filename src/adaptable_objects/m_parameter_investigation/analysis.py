@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from iminuit.cost import LeastSquares
 from iminuit import Minuit
-import matplotlib
+import matplotlib as mpl
 from matplotlib import gridspec
 
 
@@ -213,4 +213,3 @@ plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000, bbox_inches="tigh
 # ax.set_ylabel('Error',fontsize = 20)
 #
 # plt.show()
-#

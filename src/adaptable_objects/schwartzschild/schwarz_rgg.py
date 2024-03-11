@@ -92,12 +92,12 @@ class Network:
     def generate(self):
         # def f(r):
         #     vol = r * r
-        #     return 1 / vol
+        #     return vol
 
         # Generate numpy seed with random module in case of multiprocessing
         np.random.seed(random.randint(0, 16372723))
-        #
-        # # Generate uniform points in desired region
+
+        # Generate uniform points in desired region
         # r = np.linspace(self.source[1], self.sink[1], 1000000)
         # y = f(r)
         # ycdf = y.cumsum()
@@ -327,7 +327,7 @@ class Network:
 if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
-    net = Network(1000, 2)
+    net = Network(20000, 2)
 
     start = time.time()
 

@@ -5,6 +5,7 @@ import pickle
 from tqdm import tqdm
 import seaborn as sns
 from matplotlib.ticker import MultipleLocator
+from os import getcwd
 from matplotlib.colors import LogNorm, Normalize
 import matplotlib as mpl
 
@@ -12,10 +13,10 @@ mpl.rcParams['figure.dpi'] = 600
 
 # GET DATA
 
-experiment_dir = "weight_heatmap"
+experiment_dir = "processed_weight_seps(3Dplot)"
 
 # Get path to data
-path = os.getcwd().split("src")[0]
+path = os.getcwd()
 data_dir = os.fsencode(f"{path}/results/{experiment_dir}")
 
 max_collection = 30  # stop collecting data for anything above this collection
@@ -29,38 +30,42 @@ for file in tqdm(os.listdir(data_dir)):
     if "x201" not in file:
         continue
 
-    with open(f"{path}results/{experiment_dir}/{file}", 'rb') as pickle_file:
+    with open(f"{path}/results/{experiment_dir}/{file}", 'rb') as pickle_file:
         data = pickle.load(pickle_file)
 
-    deviations = []
-    for df in data:
-        deviations_temp = []
+    extract_data.append(data)
 
-        for weight in collection_range:
-            relevant_rows = df.query(f"weight == {weight}")
-            x2_sum = np.square(relevant_rows.x_poses).sum()
-            if len(relevant_rows.index) == 0:
-                x_std = 0
-            else:
-                x_std = np.sqrt(x2_sum) / len(relevant_rows.index)
+    # deviations = []
+    # for df in data:
+    #     deviations_temp = []
+    #
+    #     for weight in collection_range:
+    #         relevant_rows = df.query(f"weight == {weight}")
+    #         x2_sum = np.square(relevant_rows.x_poses).sum()
+    #         if len(relevant_rows.index) == 0:
+    #             x_seps = 0
+    #         else:
+    #             x_seps = x2_sum / len(relevant_rows.index)
+    #
+    #         deviations_temp.append(x_seps)
+    #
+    #     del df
+    #     deviations.append(deviations_temp)
+    #
+    # extract_data.append(deviations)
 
-            deviations_temp.append(x_std)
+# path = getcwd().split("src")[0]
+# with open(f"{path}/results/weight_deviation(N__3-2003x201)x25.pkl", "wb") as fp:
+#     pickle.dump(extract_data, fp)
 
-        del df
-        deviations.append(deviations_temp)
+seps = np.array(extract_data[0])
+seps_mean = np.mean(seps, axis=0)
+seps_err = np.std(seps, axis=0)
+seps_err /= np.sqrt(25)
 
-    extract_data.append(deviations)
+seps_mean[seps_mean == 0] = np.nan
 
-stds = np.array(extract_data)
-stds_mean = np.mean(stds, axis= 0)
-stds_err = np.std(stds, axis= 0)
-stds_err /= np.sqrt(2)
-
-stds_mean[stds_mean == 0] = np.nan
-
-
-
-ax = sns.heatmap(stds_mean, xticklabels=collection_range, norm=LogNorm(),
+ax = sns.heatmap(seps_mean, xticklabels=collection_range, norm=LogNorm(),
                  cbar_kws={'label': 'Mean Deviation from Geodesic'})
 
 ax.set_xlabel('Weight Class')
@@ -75,4 +80,3 @@ ax.set_xticklabels(np.linspace(0, max_collection - 1, max_collection).astype(int
 ax.invert_yaxis()
 plt.tight_layout()
 plt.show()
-
