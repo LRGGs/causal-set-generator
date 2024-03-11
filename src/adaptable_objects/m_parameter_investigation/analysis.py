@@ -11,14 +11,16 @@ from matplotlib import gridspec
 
 # matplotlib.use("TkAgg")
 
-
 def fit_1(x, par):
     ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-par[2]))
     return 1 / ans
 
-
 def fit_2(x, m):
     return 1 / (m * np.sqrt(x))
+
+def fit_3(x, par):
+    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-1 / 3) + par[2] * x ** (par[3]))
+    return 1 / ans
 
 
 # EXTRACTION
@@ -51,6 +53,9 @@ o_l_err /= Nsqrt
 
 n_range = np.array(range(100, 15001, 100))
 
+# plt.hist(o_l[:, 70])
+# plt.show()
+
 # LEAST SQUARES FIT
 
 fit_1_params = (2, 1.5, 0.33)
@@ -80,6 +85,7 @@ m = m_fit_2.params[0].value
 merr = m_fit_2.params[0].error
 red_chi_2 = m_fit_2.fval / m_fit_2.ndof
 print(m_fit_2.fval, m_fit_2.ndof)
+
 
 # PLOTTING
 

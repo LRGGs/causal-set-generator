@@ -62,14 +62,15 @@ solution = solve_bvp(geodesic_equations_bvp, boundary_conditions, tau, y_guess)
 # print(solution.y[1]) # finals xs
 
 geodesic = CubicSpline(solution.y[0], solution.y[1])
-
-# Check if the solution was successful and evaluate it
-if solution.success:
-    tau_eval = tau
-    t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
-    #plt.plot(x_eval, t_eval)
-    #print(max(x_eval))
-    #plt.show()
-    print("Solution found!")
-else:
-    print("Solution not found. Consider adjusting the initial guess or the mesh.")
+#
+# # Check if the solution was successful and evaluate it
+# if solution.success:
+#     tau_eval = tau
+#     t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
+#     #plt.plot(x_eval, t_eval)
+#     #print(max(x_eval))
+#     #plt.show()
+#     #print("Solution found!")
+# else:
+#     pass
+#     #print("Solution not found. Consider adjusting the initial guess or the mesh.")

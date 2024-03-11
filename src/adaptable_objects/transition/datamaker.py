@@ -63,7 +63,7 @@ if __name__ == '__main__':
         p = multiprocessing.Pool(processes=cpus)
         results = p.map(find_crit_r, n_range, 2)  # multiprocess different n
 
-        with open(file_namer(n_range, d, experiment), "wb") as fp:
+        with open(file_namer(n_range, d, experiment + 2), "wb") as fp:
             pickle.dump(results, fp)
 
         del results  # free up RAM
