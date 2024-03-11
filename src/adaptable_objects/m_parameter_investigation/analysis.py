@@ -19,7 +19,7 @@ def fit_2(x, m):
     return 1 / (m * np.sqrt(x))
 
 def fit_3(x, par):
-    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-1 / 3) + par[2] * x ** (par[3]))
+    ans = (2 * np.sqrt(x))*(1 - 0.22 * x ** (-1 / 3) + par[0] * x ** (par[1]))
     return 1 / ans
 
 
@@ -85,6 +85,20 @@ m = m_fit_2.params[0].value
 merr = m_fit_2.params[0].error
 red_chi_2 = m_fit_2.fval / m_fit_2.ndof
 print(m_fit_2.fval, m_fit_2.ndof)
+
+fit_3_params = (10, 0.1)
+
+least_squares_fit_3 = LeastSquares(n_range, (1 / l_means),
+                                   (l_err / l_means ** 2), fit_3)
+m_fit_3 = Minuit(least_squares_fit_3, fit_3_params)
+# m_fit_3.simplex()
+m_fit_3.migrad()
+m_fit_3.hesse()
+print(m_fit_3)
+m = m_fit_3.params[0].value
+merr = m_fit_3.params[0].error
+red_chi_3 = m_fit_3.fval / m_fit_3.ndof
+print(m_fit_3.fval, m_fit_3.ndof)
 
 
 # PLOTTING
@@ -199,32 +213,4 @@ plt.savefig('mplot_poster.png', facecolor='#F2F2F2', dpi=1000, bbox_inches="tigh
 # ax.set_ylabel('Error',fontsize = 20)
 #
 # plt.show()
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
 #
