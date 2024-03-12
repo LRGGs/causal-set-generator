@@ -553,7 +553,7 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
 
 
 def multi_run(n, r, d, iters):
-    new_file = file_namer(n, r, d, iters, json=True)
+    new_file = file_namer(n, r, d, iters, json=True, t=True)
     # path = getcwd().split("src")[0]
     # new_file = f"{path}/results/temp/{k}"
 
@@ -593,7 +593,8 @@ def main():
     # path = os.getcwd().split("src")[0]
     # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    multi_run(nrange(100, 15000, 150), 0.1, 4, 1)
+    for i in range(50):
+        multi_run(nrange(100, 15000, 150), 1, 4, 10)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
