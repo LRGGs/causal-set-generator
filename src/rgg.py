@@ -600,7 +600,7 @@ def main():
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
 
-    # run(15000, 1, 4, j=False, t=True)
+    run(15000, 1, 4, j=False, t=True)
 
     print(time.time() - start)
 
