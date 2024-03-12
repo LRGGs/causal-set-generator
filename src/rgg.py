@@ -590,11 +590,11 @@ def multi_run(n, r, d, iters):
 
 def main():
     start = time.time()
-    # path = os.getcwd().split("src")[0]
-    # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
+    path = os.getcwd().split("src")[0]
+    file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    multi_run(nrange(200, 15000, 50), 0.1, 3, 100)
-    multi_run(nrange(200, 15000, 50), 0.1, 4, 100)
+    # multi_run(nrange(200, 10000, 50), 0.1, 3, 250)
+    # multi_run(nrange(200, 10000, 50), 0.1, 4, 250)
 
     # run(1000, 0.2, 3, j=False)
 
