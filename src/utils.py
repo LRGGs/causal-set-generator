@@ -8,8 +8,8 @@ import numpy as np
 
 def file_clean_up(temp_file, new_file):
     for file in os.listdir(temp_file):
-        # with open(f"{temp_file}{file}", "a") as f: # commennt out for combining finished files
-        #     f.write(']')
+        with open(f"{temp_file}{file}", "a") as f:  # comment out for combining finished files
+            f.write(']')
         with open(f"{temp_file}{file}", "r+") as f:
             print(file)
             data = json.load(f)
