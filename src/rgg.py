@@ -102,7 +102,7 @@ class Graph:
 
         while len(positions) < self.n-2:
             new_pos = np.array([np.random.uniform(0, 1), *np.random.uniform(-0.5, 0.5, self.d - 1)])
-            if self.interval((np.zeros(self.d), new_pos)) <= 0 and self.interval((np.array([1, *[0]*(self.d-1)]), new_pos)):
+            if self.interval((np.zeros(self.d), new_pos)) <= 0 and self.interval((np.array([1, *[0]*(self.d-1)]), new_pos)) <= 0:
                 positions.append(np.array(new_pos))
 
         positions.append(np.zeros(self.d))
