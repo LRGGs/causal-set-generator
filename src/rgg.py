@@ -98,11 +98,16 @@ class Graph:
     def generate_nodes(self, seed=None):
         if seed:
             np.random.seed(seed)
-        positions = [np.random.uniform(0, 0.5, self.d) for _ in range(self.n - 2)]
-        rotation_mat = np.array([[1, 1], [-1, 1]])
-        positions.append(np.array([0, 0]))
-        positions.append(np.array([0.5, 0.5]))
-        positions = [rotation_mat @ p for p in positions]
+        positions = []
+
+        while len(positions) < self.n-2:
+            new_pos = np.array([np.random.uniform(0, 1), *np.random.uniform(-0.5, 0.5, self.d - 1)])
+            if self.interval((np.zeros(self.d), new_pos)) <= 0 and self.interval((np.array([1, *[0]*(self.d-1)]), new_pos)):
+                positions.append(np.array(new_pos))
+
+        positions.append(np.zeros(self.d))
+        positions.append((np.array([1, *[0]*(self.d-1)])))
+
         positions = sorted(positions, key=lambda pos: pos[0])
         self.nodes = [Node(node, pos) for node, pos in enumerate(positions)]
         [self.numba_nodes.append(np.array(pos, dtype=np.float32)) for pos in positions]
@@ -182,8 +187,8 @@ class Graph:
         Args:
             node_pair: the index of each node in a tuple
         """
-        pos0 = self.node_position(node_pair[0])
-        pos1 = self.node_position(node_pair[1])
+        pos0 = node_pair[0]
+        pos1 = node_pair[1]
 
         dx = pos1 - pos0
 
@@ -200,7 +205,7 @@ class Graph:
 
         dx = pos1 - pos0
 
-        return np.sqrt(dx[0] ** 2 + dx[1] ** 2)
+        return np.sqrt(dx @ dx)
 
     def proper_time(self, node_pair):
         return np.sqrt(-self.interval(node_pair))
@@ -216,6 +221,7 @@ class Graph:
 
         tot_distance = 0
         for node_pair in path:
+            node_pair = (self.node_position(node_pair[0]), self.node_position(node_pair[1]))
             tot_distance += self.proper_time(node_pair)
 
         return tot_distance
@@ -384,7 +390,7 @@ class Graph:
         node = self.nodes[0]
         while node != self.nodes[-1]:
             child_intervals = [
-                (int(child), self.proper_time((node.indx, int(child))))
+                (int(child), self.proper_time((node.position, self.nodes[int(child)].position)))
                 for child in self.relatives[node.indx].children
                 if int(child) in self.connected_interval
             ]
@@ -466,10 +472,13 @@ class Graph:
     def to_paths_info(self, n_named=False):
         return {"n": len(self.nodes) if not n_named else n_named, "paths": self.paths_info()}
 
+    def to_longest_info(self, n_named=False):
+        return {"n": len(self.nodes) if not n_named else n_named, "longest": self.paths_info()["longest"]}
+
 
 def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
     n_named = int(n)
-    n = int(np.random.poisson(n))
+    # n = int(np.random.poisson(n))
     graph = Graph(n, r, d)
     print(f"{bcolors.WARNING} Graph {i}: INSTANTIATED {bcolors.ENDC}")
     # update_status(i + 1, "yellow")
@@ -535,7 +544,7 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
         path = os.getcwd().split("src")[0]
         filename = f"{path}/json_results/temp/{str(thread)}"
 
-        dict_to_save = graph.to_paths_info(n_named=n_named)
+        dict_to_save = graph.to_longest_info(n_named=n_named)
 
         append_json_lines(filename, dict_to_save)
         del graph
@@ -584,8 +593,10 @@ def main():
     # path = os.getcwd().split("src")[0]
     # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    multi_run(nrange(500, 6000, 100), 0.1, 2, 100)
-    # run(10000, 0.2, 3, j=False)
+    multi_run(nrange(200, 15000, 50), 0.1, 3, 100)
+    multi_run(nrange(200, 15000, 50), 0.1, 4, 100)
+
+    # run(1000, 0.2, 3, j=False)
 
     print(time.time() - start)
 
