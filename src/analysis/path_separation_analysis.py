@@ -125,8 +125,8 @@ def separation_from_geodesic_by_path(graphs):
         "images/Mean Separation from Geodesic per Path.png",
         bbox_inches="tight",
         dpi=1000,
-        # facecolor="#F2F2F2",
-        transparent=True,
+        facecolor="#F2F2F2",
+        # transparent=True,
     )
     # plt.show()
     plt.clf()
@@ -136,7 +136,7 @@ def separation_from_geodesic_by_path(graphs):
 
 if __name__ == "__main__":
     res, xs = [], []
-    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths")
+    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths", specific="big_temp_data.json")
     r, x = separation_from_geodesic_by_path(graphs)
     res += r
     xs.append(x)
