@@ -12,7 +12,7 @@ from scipy.optimize import curve_fit
 
 from utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", #"greedy_m",
+PATH_NAMES = ["longest", "greedy_e", "greedy_m",
               "random", "shortest"]
 
 
