@@ -593,8 +593,8 @@ def main():
     # path = os.getcwd().split("src")[0]
     # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    for i in range(50):
-        multi_run(nrange(100, 15000, 150), 1, 4, 10)
+    for i in range(25):
+        multi_run(nrange(100, 8000, 100), 1, 2, 10)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
