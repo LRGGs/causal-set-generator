@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from os import getcwd
 
 import numpy as np
+from iminuit import Minuit
+from iminuit.cost import LeastSquares
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 
@@ -14,29 +16,31 @@ PATH_NAMES = ["longest", "greedy_e", "greedy_m", "random", "shortest"]
 
 
 def expo(x, a, b):
-    return a * x**b
+    return a * x ** b
 
 
 def inv_poly(x, a, b, c):
-    return a + (b / x) + (c / x**2)
+    return a + (b / x) + (c / x ** 2)
 
 
 def expo_inv_poly(x, a, b, c, d, e):
-    return (a * x**b) * (c + (d / x) + (e / x**2))
+    return (a * x ** b) * (c + (d / x) + (e / x ** 2))
 
 
 def linear(x, a):
     return a
 
 
+label_map = {
+    "longest": "Longest",
+    "shortest": "Shortest",
+    "random": "Random",
+    "greedy_e": "Greedy Euclidean",
+    "greedy_m": "Greedy Minkowski",
+}
+
+
 def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
-    label_map = {
-        "longest": "Longest",
-        "shortest": "Shortest",
-        "random": "Random",
-        "greedy_e": "Greedy Euclidean",
-        "greedy_m": "Greedy Minkowski",
-    }
     if path in ["longest", "greedy_e", "greedy_o"]:
         params = params if params is not None else [1.7, 0.5]
         popt, pcov = curve_fit(
@@ -173,6 +177,7 @@ def calculate_reduced_chi2(data, fit_data, uncertainties):
     residuals = data - fit_data
     chi2 = np.sum((residuals / uncertainties) ** 2)
     dof = len(data) - len(fit_data.shape)  # degrees of freedom
+    # print(chi2, dof)
     return chi2 / dof
 
 
@@ -192,6 +197,69 @@ class Data:
                 setattr(self, attr_name, np.ndarray(attr))
             else:
                 raise TypeError(f"invalid data type: {type(attr)} for {attr}")
+
+
+def fit_1(x, par):
+    ans = (par[0] * x ** (1 / 4)) * (1 + par[1] * x ** (-par[2]))
+    return ans
+
+
+def fit_2(x, par):
+    ans = par * x ** (1 / 4)
+    return ans
+
+
+def fit_3(x, par):
+    ans = par[0] * x ** (par[1])
+    return ans
+
+
+def fit_expo_corr(x_data, y_data, y_err, path, params=(2, 0, -1/3), ax=None, p=False):
+    fit_1_params = params
+
+    least_squares_fit_1 = LeastSquares(x_data, y_data, y_err, fit_1)
+    m_fit_1 = Minuit(least_squares_fit_1, fit_1_params)
+    m_fit_1.migrad()
+    m_fit_1.hesse()
+    red_chi_1 = m_fit_1.fval / m_fit_1.ndof
+
+    popt = m_fit_1.values
+    error = m_fit_1.errors
+
+    y_fit = np.array([fit_1(x, popt) for x in x_data])
+    red_chi = calculate_reduced_chi2(
+        np.array(y_data), np.array(y_fit), np.array(y_err)
+    )
+    # print(params, m_fit_1.values, red_chi_1)
+
+    if p:
+        print(m_fit_1.fval, m_fit_1.ndof)
+        print(popt)
+        print(m_fit_1)
+        print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+
+    legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$"
+    if not ax:
+        (l,) = plt.plot(x_data, y_fit, label=legend)
+    else:
+        if path == "longest":
+            (l,) = ax.plot(
+                x_data,
+                y_fit,
+                label=legend,
+                zorder=4,
+                color="black",
+            )
+        if path == "greedy_e":
+            (l,) = ax.plot(
+                x_data,
+                y_fit,
+                linestyle="dashed",
+                label=legend,
+                zorder=4,
+                color="black",
+            )
+    return l, legend, y_fit, red_chi, m_fit_1.values
 
 
 if __name__ == "__main__":

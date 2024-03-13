@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from dataclasses import dataclass
 import time
 from os import getcwd
@@ -182,3 +183,16 @@ class Paths:
             "random": self.random,
             "shortest": self.shortest,
         }
+
+
+if __name__ == '__main__':
+    total_data = []
+    path = getcwd().split("src")[0]
+    path1 = path + "results/results/"
+    for file in os.listdir(path1):
+        with open(f"{path1}/{file}", "r+") as f:
+            print(file)
+            data = json.load(f)
+            total_data += data
+    with open(f"{path}/results/big_temp_data.json", 'w') as f:
+        json.dump(total_data, f)
