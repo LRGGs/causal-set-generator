@@ -134,10 +134,12 @@ def full_weights_analysis(graphs):
     plt.legend()
     plt.xlabel("Weight")
     plt.ylabel("Mean Separation")
+    plt.grid(which="major")
+    plt.grid(which="minor")
     plt.title(
         f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
     )
-    plt.show()
+    # plt.show()
 
     collapsed_mean_seps = [
         np.mean(weight_seps) for weight_seps in collapsed_valid_weight_seps.values()
@@ -146,15 +148,15 @@ def full_weights_analysis(graphs):
         np.std(weight_seps) / np.sqrt(len(weight_seps))
         for weight_seps in collapsed_valid_weight_seps.values()
     ]
-    plt.errorbar(
-        valid_weights,
-        collapsed_mean_seps,
-        collapsed_mean_sep_errs,
-        ls="none",
-        marker="x",
-        capsize=5,
-        label="data",
-    )
+    # plt.errorbar(
+    #     valid_weights,
+    #     collapsed_mean_seps,
+    #     collapsed_mean_sep_errs,
+    #     ls="none",
+    #     marker="x",
+    #     capsize=5,
+    #     label="data",
+    # )
     popt = np.polyfit(valid_weights, collapsed_mean_seps, deg=7)
     print(f"seventh order polynomial with with constants: {popt}")
     y_fit = np.poly1d(popt)(valid_weights)
@@ -171,7 +173,11 @@ def full_weights_analysis(graphs):
     plt.title(
         f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
     )
-    plt.show()
+    plt.savefig(
+        f"images/Collapsed weights.png",
+        transparent=True,
+    )
+    plt.clf
 
     results = []
     passed = 0

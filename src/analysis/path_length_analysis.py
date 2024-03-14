@@ -71,14 +71,14 @@ def length_of_paths_with_n(graphs, d):
     plt.loglog()
     plt.legend(loc="upper left", bbox_to_anchor=(1.02, 0.875))
     # plt.title(f"Path Lengths Against Number of Nodes")
-    plt.xlabel("Number of  Nodes")
-    plt.ylabel("Path Length")
+    plt.xlabel("Number of  Nodes", fontsize=16)
+    plt.ylabel("Path Length", fontsize=16)
     plt.savefig(
         f"images/Path Lengths Against Number of Nodes {d}D.png",
         bbox_inches="tight",
         dpi=1000,
-        facecolor="#F2F2F2",
-        # transparent=True,
+        # facecolor="#F2F2F2",
+        transparent=True,
     )
     plt.clf()
 

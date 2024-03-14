@@ -14,7 +14,7 @@ from src.utils import nrange, colour_map, label_map
 # matplotlib.use("TkAgg")
 
 
-def separation_from_geodesic_by_path(graphs):
+def separation_from_geodesic_by_path(graphs, d):
     fit_legends = []
     plot_lines = []
 
@@ -41,7 +41,7 @@ def separation_from_geodesic_by_path(graphs):
         n_seps = defaultdict(list)
         for graph in graphs:
             n_seps[graph["n"]].append(
-                np.mean([pos[1]**2 for pos in graph["paths"][path]])
+                np.mean([sum(pos[j]**2 for j in range(1, len(pos))) for pos in graph["paths"][path]])
             )
 
         x_data = list(n_seps.keys())
@@ -75,7 +75,7 @@ def separation_from_geodesic_by_path(graphs):
 
         if path in ["longest", "greedy_e", "greedy_o"]:
             i += 1
-            l, legend, y_fit, popt = fit_expo(
+            l, legend, y_fit = fit_expo(
                 x_data, y_data, y_err, path, params=[0.4, -0.2], ax=ax
             )
             plot_lines.append(l)
@@ -103,7 +103,7 @@ def separation_from_geodesic_by_path(graphs):
     plt.subplots_adjust(hspace=0.01)  # remove distance between subplots
     # ax.set_xbound(lower=2000, upper=4000)
     plt.savefig(
-        "images/Mean Separation from Geodesic per Path.png",
+        f"images/Mean Separation from Geodesic per Path {d}D.png",
         bbox_inches="tight",
         dpi=1000,
         # facecolor="#F2F2F2",
@@ -113,5 +113,6 @@ def separation_from_geodesic_by_path(graphs):
 
 
 if __name__ == "__main__":
-    graphs = read_file(nrange(100, 8000, 100), 1, 2, 250, extra="paths")
-    separation_from_geodesic_by_path(graphs)
+    d = 2
+    graphs = read_file(nrange(100, 8000, 100), 1, d, 250, extra="paths")
+    separation_from_geodesic_by_path(graphs, d)

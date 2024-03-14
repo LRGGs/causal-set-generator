@@ -142,6 +142,7 @@ def read_file(n, r, d, i, extra=None, specific=None):
     Returns:
         Any: The parsed data from the file, or None if the file format cannot be determined.
     """
+    filename = file_namer(n, r, d, i, extra)
     if specific:
         path = getcwd().split("src")[0]
         filename = path + "/results/" + specific
@@ -165,6 +166,7 @@ def read_file(n, r, d, i, extra=None, specific=None):
                 data = sorted(data, key=lambda datum: datum["n"])
                 return data
         except (json.JSONDecodeError, FileNotFoundError):
+            print(filename)
             print("File is neither a valid pickle nor JSON file.")
             return None
 
@@ -184,7 +186,6 @@ def calculate_reduced_chi2(data, fit_data, uncertainties):
     residuals = data - fit_data
     chi2 = np.sum((residuals / uncertainties) ** 2)
     dof = len(data) - len(fit_data.shape)  # degrees of freedom
-    # print(chi2, dof)
     pval = 1 - stats.chi2.cdf(chi2, dof)
     return chi2 / dof, pval
 
