@@ -6,10 +6,8 @@ import numpy as np
 from matplotlib import gridspec
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
-from scipy.stats import poisson
-import math
 
-from src.analysis.an_utils import PATH_NAMES, read_file, fit_expo, fit_expo_poly
+from src.analysis.an_utils import PATH_NAMES, read_file, fit_expo, expo
 from src.utils import nrange, colour_map, label_map
 
 
@@ -45,27 +43,10 @@ def separation_from_geodesic_by_path(graphs):
             n_seps[graph["n"]].append(
                 np.mean([pos[1]**2 for pos in graph["paths"][path]])
             )
-            # n_errs[graph["n"]].append(
-            #     np.std([pos[1]**2 for pos in graph["paths"][path]])/np.sqrt(len(graph["paths"][path]))
-            # )
-            # n_seps[graph["n"]] += [pos[1] ** 2 for pos in graph["paths"][path]]
 
         x_data = list(n_seps.keys())
         y_data = [np.mean(v) for v in n_seps.values()]
         y_err = [np.std(v) / np.sqrt(len(v)) for v in n_seps.values()]
-
-        # for j, n in enumerate(x_data):
-        #     y_weights = []
-        #     y_err_weights = []
-        #     for i, q in enumerate(y_data):
-        #         x_i = x_data[i]
-        #         y_weights.append(q*poisson.pmf(x_i, n))
-        #         y_err_weights.append((y_err[i]*poisson.pmf(x_i, n))**2)
-        #     y_data[j] = sum(y_weights)
-        #     y_err[j] = np.sqrt(sum(y_err_weights))
-
-        # cut = 5
-        # x_data, y_data, y_err = x_data[cut:-cut], y_data[cut:-cut], y_err[cut:-cut]
 
         if path == "greedy_m":
             ax.errorbar(
@@ -94,7 +75,7 @@ def separation_from_geodesic_by_path(graphs):
 
         if path in ["longest", "greedy_e", "greedy_o"]:
             i += 1
-            l, legend, y_fit = fit_expo(
+            l, legend, y_fit, popt = fit_expo(
                 x_data, y_data, y_err, path, params=[0.4, -0.2], ax=ax
             )
             plot_lines.append(l)
@@ -125,28 +106,12 @@ def separation_from_geodesic_by_path(graphs):
         "images/Mean Separation from Geodesic per Path.png",
         bbox_inches="tight",
         dpi=1000,
-        facecolor="#F2F2F2",
-        # transparent=True,
+        # facecolor="#F2F2F2",
+        transparent=True,
     )
-    # plt.show()
     plt.clf()
-
-    return residuals, x_data
 
 
 if __name__ == "__main__":
-    res, xs = [], []
-    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths", specific="big_temp_data.json")
-    r, x = separation_from_geodesic_by_path(graphs)
-    res += r
-    xs.append(x)
-    # graphs = read_file(nrange(2000, 4000, 100), 0.1, 2, 50, extra="paths2")
-    # r, x = separation_from_geodesic_by_path(graphs)
-    # res += r
-    # xs.append(x)
-    # i = 0
-    # plt.plot(xs[0], np.abs(res[0]), label="long")
-    # plt.plot(xs[0], np.abs(res[1]), "--", label="euc")
-    # plt.tight_layout()
-    # plt.legend()
-    # plt.show()
+    graphs = read_file(nrange(100, 8000, 100), 1, 2, 250, extra="paths")
+    separation_from_geodesic_by_path(graphs)

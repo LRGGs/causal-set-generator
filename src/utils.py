@@ -99,7 +99,7 @@ def file_namer(n, r, d, iters, extra=None, json=False, temp=False, t=False):
         f"{path}/results/{'temp/' if temp else ''}N-{n if not isinstance(n, list) else '(' + str(min(n)) + '-' + str(max(n)) + ')x' + str(len(n))}"
         f"__R-{str(r).replace('.', '-') if not isinstance(r, list) else ('(' + str(min(r)) + '-' + str(max(r)) + ')x' + str(len(r))).replace('.', '-')}"
         f"__D-{d if not isinstance(d, list) else '(' + str(min(d)) + '-' + str(max(d)) + ')x' + str(len(d))}"
-        f"__I-{iters}{'_' + extra if extra else ''}{time.time() if time else ''}.{'json' if json else 'pkl'}"
+        f"__I-{iters}{'_' + extra if extra else ''}{'_' + str(time.time()) if t else ''}.{'json' if json else 'pkl'}"
     )
 
 
@@ -194,5 +194,5 @@ if __name__ == '__main__':
             print(file)
             data = json.load(f)
             total_data += data
-    with open(f"{path}/results/big_temp_data.json", 'w') as f:
+    with open(f"{path}/results/N-(100-8000)x100__R-1__D-2__I-250_paths.json", 'w') as f:
         json.dump(total_data, f)

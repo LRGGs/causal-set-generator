@@ -9,10 +9,11 @@ from iminuit import Minuit
 from iminuit.cost import LeastSquares
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
+from scipy import stats
 
 from utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", "greedy_m",
+PATH_NAMES = ["longest", "greedy_e", #"greedy_m",
               "random", "shortest"]
 
 
@@ -42,7 +43,12 @@ label_map = {
 
 
 def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
-    if path in ["longest", "greedy_e", "greedy_o"]:
+    if path in [
+        "longest",
+        "greedy_e",
+        "greedy_o",
+        "random",
+    ]:
         params = params if params is not None else [1.7, 0.5]
         popt, pcov = curve_fit(
             f=expo, xdata=x_data, ydata=y_data, p0=params, sigma=y_err
@@ -50,11 +56,11 @@ def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
         error = np.sqrt(np.diag(pcov))
         print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
         y_fit = np.array([expo(x, *popt) for x in x_data])
-        red_chi = calculate_reduced_chi2(
+        red_chi, pval = calculate_reduced_chi2(
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-        legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$"
+        legend = f"{label_map[path]} fit: \n${popt[0]:.2f}xN^{{{popt[1]:.2f}}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
         if not ax:
             (l,) = plt.plot(x_data, y_fit, label=legend)
         else:
@@ -179,7 +185,8 @@ def calculate_reduced_chi2(data, fit_data, uncertainties):
     chi2 = np.sum((residuals / uncertainties) ** 2)
     dof = len(data) - len(fit_data.shape)  # degrees of freedom
     # print(chi2, dof)
-    return chi2 / dof
+    pval = 1 - stats.chi2.cdf(chi2, dof)
+    return chi2 / dof, pval
 
 
 @dataclass
@@ -200,25 +207,22 @@ class Data:
                 raise TypeError(f"invalid data type: {type(attr)} for {attr}")
 
 
-def fit_1(x, par):
-    ans = (par[0] * x ** (1 / 4)) * (1 + par[1] * x ** (-par[2]))
+def fit_4d(x, par):
+    ans = (par[0] * x ** (1 / 4)) * (1 + par[1] * x ** (par[2]))
     return ans
 
 
-def fit_2(x, par):
-    ans = par * x ** (1 / 4)
+def fit_2d(x, par):
+    ans = (par[0] * x ** (1 / 4)) * (1 + par[1] * x ** (par[2]))
     return ans
 
 
-def fit_3(x, par):
-    ans = par[0] * x ** (par[1])
-    return ans
+def fit_expo_corr(x_data, y_data, y_err, path, params=(2, 0, -1/3), ax=None, p=False, d=4):
+    assert (d == 2 or d == 4)
 
-
-def fit_expo_corr(x_data, y_data, y_err, path, params=(2, 0, -1/3), ax=None, p=False):
     fit_1_params = params
 
-    least_squares_fit_1 = LeastSquares(x_data, y_data, y_err, fit_1)
+    least_squares_fit_1 = LeastSquares(x_data, y_data, y_err, fit_4d if d == 4 else fit_2d)
     m_fit_1 = Minuit(least_squares_fit_1, fit_1_params)
     m_fit_1.migrad()
     m_fit_1.hesse()
@@ -227,39 +231,40 @@ def fit_expo_corr(x_data, y_data, y_err, path, params=(2, 0, -1/3), ax=None, p=F
     popt = m_fit_1.values
     error = m_fit_1.errors
 
-    y_fit = np.array([fit_1(x, popt) for x in x_data])
-    red_chi = calculate_reduced_chi2(
+    y_fit = np.array([fit_4d(x, popt) if d == 4 else fit_2d(x, popt) for x in x_data])
+    red_chi, pval = calculate_reduced_chi2(
         np.array(y_data), np.array(y_fit), np.array(y_err)
     )
     # print(params, m_fit_1.values, red_chi_1)
 
+    l, legend = None, None
     if p:
         print(m_fit_1.fval, m_fit_1.ndof)
         print(popt)
         print(m_fit_1)
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
 
-    legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$"
-    if not ax:
-        (l,) = plt.plot(x_data, y_fit, label=legend)
-    else:
-        if path == "longest":
-            (l,) = ax.plot(
-                x_data,
-                y_fit,
-                label=legend,
-                zorder=4,
-                color="black",
-            )
-        if path == "greedy_e":
-            (l,) = ax.plot(
-                x_data,
-                y_fit,
-                linestyle="dashed",
-                label=legend,
-                zorder=4,
-                color="black",
-            )
+        legend = f"{label_map[path]} fit: \n${popt[0]:.2f}xN^{{{0.25 if d == 4 else 0.5}}}x(1{'+' if popt[1] > 0 else ''}{popt[1]:.1E} x N^{{{popt[2]:.2f}}})$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        if not ax:
+            (l,) = plt.plot(x_data, y_fit, label=legend)
+        else:
+            if path == "longest":
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
+            if path == "greedy_e":
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    linestyle="dashed",
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
     return l, legend, y_fit, red_chi, m_fit_1.values
 
 

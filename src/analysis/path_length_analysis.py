@@ -11,14 +11,20 @@ from src.analysis.an_utils import (
     PATH_NAMES,
     read_file,
     calculate_reduced_chi2,
-    fit_expo, fit_expo_corr,
+    fit_expo, fit_expo_corr, linear,
 )
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")
 
+parameters = {
+    "longest": [2.11, 2.4e-4, -0.48],
+    "greedy_e": [2, 0.25],
+    "random": [2.8, 0.05],
+}
 
-def length_of_paths_with_n(graphs):
+
+def length_of_paths_with_n(graphs, d):
     for path in PATH_NAMES:
         n_lengths = defaultdict(list)
         for graph in graphs:
@@ -27,40 +33,57 @@ def length_of_paths_with_n(graphs):
         x_data = list(n_lengths.keys())
         y_data = [np.mean(v) for v in n_lengths.values()]
         y_err = [np.std(v) / np.sqrt(len(v)) for v in n_lengths.values()]
-        plt.errorbar(
-            x_data,
-            y_data,
-            yerr=y_err,
-            ls="none",
-            capsize=5,
-            marker=".",
-            label=path,
-        )
-        if path in ["longest"]:
-            par1 = np.linspace(2.1, 2.13, 10)
-            par2 = np.linspace(-0.001, 0.001, 10)
-            par3 = np.linspace(-0.5, -0.4, 10)
-            vars = list(product(par1, par2, par3))
-            results = []
-            for var in tqdm(vars):
-                try:
-                    _, _, _, xi, m_vals = fit_expo_corr(x_data, y_data, y_err, path, params=var)
-                    results.append((xi, var, m_vals))
-                except Exception as e:
-                    print(e)
-                    print(var)
-            best_var = min(results, key=lambda i: i[0])[1:]
-            print(best_var)
-            _, _, _, xi = fit_expo_corr(x_data, y_data, y_err, path, params=best_var, p=True)
 
+        if path == "shortest":
+            plt.plot(x_data, [3]*len(x_data), label="Shortest fit: 3.0")
+            plt.plot(
+                x_data,
+                y_data,
+                ls="none",
+                marker=".",
+                label=path,
+            )
+        elif path in ["longest"]:
+            plt.errorbar(
+                x_data,
+                y_data,
+                yerr=y_err,
+                ls="none",
+                capsize=5,
+                marker=".",
+                label=path,
+            )
+            fit_expo_corr(x_data, y_data, y_err, path, params=parameters[path], p=True, d=d)
+        else:
+            plt.errorbar(
+                x_data,
+                y_data,
+                yerr=y_err,
+                ls="none",
+                capsize=5,
+                marker=".",
+                label=path,
+            )
+            fit_expo(x_data, y_data, y_err, path, params=parameters[path])
+
+    plt.grid(which="major")
+    plt.grid(which="minor")
     plt.loglog()
-    plt.legend()
-    plt.title(f"Path Lengths Against Number of Nodes")
+    plt.legend(loc="upper left", bbox_to_anchor=(1.02, 0.875))
+    # plt.title(f"Path Lengths Against Number of Nodes")
     plt.xlabel("Number of  Nodes")
     plt.ylabel("Path Length")
-    plt.show()
+    plt.savefig(
+        f"images/Path Lengths Against Number of Nodes {d}D.png",
+        bbox_inches="tight",
+        dpi=1000,
+        facecolor="#F2F2F2",
+        # transparent=True,
+    )
+    plt.clf()
 
 
 if __name__ == "__main__":
-    graphs = read_file(nrange(200, 10000, 50), 0.1, 2, 100, extra="paths", specific="big_temp_data.json")
-    length_of_paths_with_n(graphs)
+    d = 4
+    graphs = read_file(nrange(100, 15000, 150), 1, d, 320, extra="paths")
+    length_of_paths_with_n(graphs, d=d)
