@@ -33,7 +33,7 @@ def mean_angular_deviations_per_path_per_n(graphs, d):
         axis="both", labelsize=10, direction="in", top=True, right=True, which="both"
     )
     for path_name in PATH_NAMES:
-        if path_name not in ["shortestx", "random", "greedy_mx"]:
+        if path_name not in ["shortestx", "randomx", "greedy_mx"]:
             n_angles = defaultdict(list)
             for graph in graphs:
                 angles = []
@@ -60,18 +60,19 @@ def mean_angular_deviations_per_path_per_n(graphs, d):
                 marker=".",
                 label=label_map[path_name],
             )
-
-            popt, pcov = curve_fit(
-                f=linear, xdata=x_data, ydata=y_data, p0=[1], sigma=y_err
-            )
-            y_fit = np.array([popt]*len(x_data))
-            red_chi, pval = calculate_reduced_chi2(y_data, y_fit, y_err)
-            plt.plot(x_data, y_fit, label=f"{label_map[path_name]} fit: ${popt[0]:.2f}$\n $\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}")
+            if path_name in ["longest", "greedy_e"]:
+                popt, pcov = curve_fit(
+                    f=linear, xdata=x_data, ydata=y_data, p0=[1], sigma=y_err
+                )
+                fit = 10
+                y_fit = np.array([popt]*len(x_data))
+                red_chi, pval = calculate_reduced_chi2(y_data[-fit:], y_fit[-fit:], y_err[-fit:])
+                plt.plot(x_data, y_fit, label=f"{label_map[path_name]} fit: ${popt[0]:.2f}$\n $\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}")
 
     plt.legend(loc="upper left", bbox_to_anchor=(1.02, 0.875))
     plt.xlabel("Number of Nodes")
     plt.ylabel("Angular Deviation Between Edges, Rad")
-    plt.ylim(0.5, 0.94)
+    # plt.ylim(0.5, 0.94)
     plt.savefig(
         f"images/Mean Angular Deviation per Path {d}D.png",
         bbox_inches="tight",
@@ -83,5 +84,5 @@ def mean_angular_deviations_per_path_per_n(graphs, d):
 
 if __name__ == "__main__":
     d = 2
-    graphs = read_file(nrange(100, 8000, 100), 1, d, 250, extra="paths")
+    graphs = read_file(nrange(100, 10000, 100), 0.1, d, 100, extra="paths")
     mean_angular_deviations_per_path_per_n(graphs, d)
