@@ -13,6 +13,10 @@ from src.utils import nrange, colour_map, label_map
 
 # matplotlib.use("TkAgg")
 
+params = {
+    "longest": [0.04, -0.32],
+    "greedy_e": [0.07, -0.48]
+}
 
 def separation_from_geodesic_by_path(graphs, d):
     fit_legends = []
@@ -48,6 +52,14 @@ def separation_from_geodesic_by_path(graphs, d):
         y_data = [np.mean(v) for v in n_seps.values()]
         y_err = [np.std(v) / np.sqrt(len(v)) for v in n_seps.values()]
 
+        cut = 1
+        specific = 27
+        x_data, y_data, y_err = x_data[cut:], y_data[cut:], y_err[cut:]
+        x_data, y_data, y_err = x_data[:-cut], y_data[:-cut], y_err[:-cut]
+        del x_data[specific]
+        del y_data[specific]
+        del y_err[specific]
+
         if path == "greedy_m":
             ax.errorbar(
                 x_data,
@@ -76,7 +88,7 @@ def separation_from_geodesic_by_path(graphs, d):
         if path in ["longest", "greedy_e", "greedy_o"]:
             i += 1
             l, legend, y_fit = fit_expo(
-                x_data, y_data, y_err, path, params=[0.4, -0.2], ax=ax
+                x_data, y_data, y_err, path, params=params[path], ax=ax
             )
             plot_lines.append(l)
             fit_legends.append(legend)
@@ -114,5 +126,5 @@ def separation_from_geodesic_by_path(graphs, d):
 
 if __name__ == "__main__":
     d = 2
-    graphs = read_file(nrange(100, 8000, 100), 1, d, 250, extra="paths")
+    graphs = read_file(nrange(100, 10000, 100), 0.1, d, 100, extra="paths")
     separation_from_geodesic_by_path(graphs, d)

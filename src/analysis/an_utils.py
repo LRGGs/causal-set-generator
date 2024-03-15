@@ -13,7 +13,7 @@ from scipy import stats
 
 from utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", #"greedy_m",
+PATH_NAMES = ["longest", "greedy_e", "greedy_m",
               "random", "shortest"]
 
 
@@ -60,7 +60,7 @@ def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-        legend = f"{label_map[path]} fit: \n${popt[0]:.2f}xN^{{{popt[1]:.2f}}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        legend = f"{label_map[path]} fit: \n$({popt[0]:.3f}\pm{error[0]:.3f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
         if not ax:
             (l,) = plt.plot(x_data, y_fit, label=legend)
         else:
