@@ -7,12 +7,13 @@ from iminuit.cost import LeastSquares
 from iminuit import Minuit
 import matplotlib as mpl
 from matplotlib import gridspec
+from scipy.optimize import curve_fit
 
 
 # matplotlib.use("TkAgg")
 
 def fit_1(x, par):
-    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-par[2]))
+    ans = par[0] * np.sqrt(x) * (1 + par[1] * x ** (-1/3))
     return 1 / ans
 
 def fit_2(x, m):
@@ -27,9 +28,14 @@ def fit_3(x, par):
 #     return 1 / ans
 
 def cut_fit(x, par):
-    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (par[2]))
+    ans = (par[0] * np.sqrt(x))*(1 + par[1] * x ** (-1/3))
     return 1 / ans
 
+def power_law(x, a, b):
+    return a * x ** b
+
+def corr_power_law(x, a):
+    return a * x ** 1/3
 
 # EXTRACTION
 
@@ -51,10 +57,15 @@ for file in os.listdir(data_dir):
 
 # DATA
 
-N = 22  # number of experiments
+N = 205  # number of experiments
 Nsqrt = np.sqrt(N)
 
 l = np.vstack(extracted_data)
+
+# # Check distribution
+# plt.hist(l[-50, :], bins=30)
+# print(np.std(l[-50, :]))
+# plt.show()
 
 o_l = 1 / l
 o_l_err = np.std(o_l, axis=0)
@@ -63,11 +74,22 @@ o_l_err /= Nsqrt
 
 l_means = np.mean(l, axis=0)
 l_err = np.std(l, axis=0)
-print(l_err)
 l_err /= Nsqrt
 
 n_range = np.array(range(100, 15001, 100))
 
+# Check Variance power law (clearly missing asymptotic correction)
+variance = (l_err * Nsqrt)**2
+plt.errorbar(n_range, variance,yerr=variance*np.sqrt(2/(N - 1)), fmt="ro", zorder=1)
+fit_pars = curve_fit(power_law, n_range, variance, sigma=variance*np.sqrt(2/(N - 1)))
+plt.plot(n_range, power_law(n_range, fit_pars[0][0], fit_pars[0][1]), zorder=2)
+print("Variance scales as N to"
+      " the power {} +- {}".format(fit_pars[0][1], np.sqrt(fit_pars[1][1][1])))
+plt.yscale("log")
+plt.xscale("log")
+plt.show()
+
+# # Check 1/l variance
 # plt.hist(o_l[:, 70])
 # plt.show()
 
@@ -87,7 +109,7 @@ n_range = np.array(range(100, 15001, 100))
 # red_chi_1 = m_fit_1.fval / m_fit_1.ndof
 # print(m_fit_1.fval, m_fit_1.ndof)
 
-fit_1_params = (2, -0.22, 0.33)
+fit_1_params = (2, -0.22)
 
 least_squares_fit_1 = LeastSquares(n_range, (1 / l_means),
                                    l_err / (l_means ** 2), fit_1)
@@ -129,11 +151,11 @@ merr = m_fit_3.params[0].error
 red_chi_3 = m_fit_3.fval / m_fit_3.ndof
 print(m_fit_3.fval, m_fit_3.ndof)
 
-cut_fit_params = (2, 10, 0.33)
-cut1 = 0
-cut2 = 149
+cut_fit_params = (2, -1)
+cut1 = 20
+cut2 = 150
 least_squares_cut_fit = LeastSquares(n_range[cut1:cut2], (1 / l_means)[cut1:cut2],
-                                   (l_err / l_means ** 2)[cut1:cut2], fit_1)
+                                     (l_err / l_means**2)[cut1:cut2], fit_1)
 m_cut_fit = Minuit(least_squares_cut_fit, cut_fit_params)
 # m_cut_fit.simplex()
 m_cut_fit.migrad()
@@ -216,7 +238,7 @@ ax.plot(xs, fit_1(xs, m_fit_1.values), "b--", linewidth=1.5,
         )
 
 ax.errorbar(n_range, 1 / l_means,
-            yerr=l_err / l_means ** 2, label="Data",
+            yerr=(l_err * Nsqrt) / l_means ** 2, label="Data",
             fmt='.', capsize=5, zorder=-1, linewidth=2, color="#E69F00")
 # ax.errorbar(n_range, o_l_means,
 #             yerr= o_l_err ,
@@ -230,7 +252,7 @@ ins_xs = np.linspace(3000, 15000, 1000)
 axins.plot(ins_xs, fit_2(ins_xs, m_fit_2.values), color='black', linewidth=1.5)
 axins.plot(ins_xs, fit_1(ins_xs, m_fit_1.values), 'b--', linewidth=2.5)
 axins.errorbar(n_range[ins_n:], (1 / l_means)[ins_n:],
-               yerr=(l_err / l_means ** 2)[ins_n:],
+               yerr=((l_err * Nsqrt) / l_means ** 2)[ins_n:],
                fmt='.', capsize=5, zorder=-1, linewidth=2, color="#E69F00")
 
 handles, labels = ax.get_legend_handles_labels()
