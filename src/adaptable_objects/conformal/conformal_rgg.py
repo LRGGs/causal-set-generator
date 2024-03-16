@@ -84,7 +84,7 @@ class Network:
 
     def generate(self):
         # Generate numpy seed with random module in case of multiprocessing
-        np.random.seed(random.randint(0, 16372723))
+        np.random.seed(4)
 
         def f(x):
             vol = x**2
@@ -306,22 +306,24 @@ class Network:
 
         if show_paths:
             s_mask = np.array([i & 0b00010 for i in self.paths])
-            plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co")
+            plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co", label="shortest")
 
             r_mask = np.array([i & 0b00100 for i in self.paths])
-            plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro")
+            plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro", label="random")
 
             g_mask = np.array([i & 0b01000 for i in self.paths])
-            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-mo")
+            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-mo", label="Greedy Minkowski")
 
             e_mask = np.array([i & 0b10000 for i in self.paths])
-            plt.plot(self.poses[:, 1][e_mask == 16], self.poses[:, 0][e_mask == 16], "-yo")
+            plt.plot(self.poses[:, 1][e_mask == 16], self.poses[:, 0][e_mask == 16], "-yo", label="Greedy Euclidean")
 
             l_mask = np.array([i & 0b00001 for i in self.paths])
-            plt.plot(self.poses[:, 1][l_mask == 1], self.poses[:, 0][l_mask == 1], "-bo")
+            plt.plot(self.poses[:, 1][l_mask == 1], self.poses[:, 0][l_mask == 1], "-bo", label="Longest")
         if show_geodesic:
             ts = np.linspace(self.source[0], self.sink[0], 1000)
             xs = geodesic(ts)
+            plt.grid(which="major")
+            plt.grid(which="minor")
             plt.plot(xs, ts, color="k", label="True Geodesic")
 
     def graph(self):
@@ -415,4 +417,12 @@ if __name__ == "__main__":
     plt.figure(figsize=(6, 8))
     net.plot(show_paths=True, show_geodesic=True)
     plt.legend()
-    plt.show()
+    plt.xlabel("Spatial Coordinate", fontsize=16)
+    plt.ylabel("Temporal Coordinate", fontsize=16)
+    plt.savefig(
+        "Conformal Curved Spacetime",
+        bbox_inches="tight",
+        dpi=1000,
+        # facecolor="#F2F2F2",
+        transparent=True,
+    )

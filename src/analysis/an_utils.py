@@ -29,8 +29,12 @@ def expo_inv_poly(x, a, b, c, d, e):
     return (a * x ** b) * (c + (d / x) + (e / x ** 2))
 
 
-def linear(x, a):
+def flat(x, a):
     return a
+
+
+def linear(x, a, b):
+    return a * x + b
 
 
 label_map = {
@@ -84,56 +88,46 @@ def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
         return l, legend, y_fit
 
 
-def fit_inv_poly(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e", "greedy_o"]:
-        params = params if params is not None else [1, 0, 0]
-        popt, pcov = curve_fit(
-            f=inv_poly, xdata=x_data, ydata=y_data, p0=params, sigma=y_err
-        )
-        error = np.sqrt(np.diag(pcov))
-        print(
-            f"y = {popt[0]}+-{error[0]} + {popt[1]}+-{error[1]}/x + {popt[2]}+-{error[2]}/x^2"
-        )
-        y_fit = [inv_poly(x, *popt) for x in x_data]
-        plt.plot(x_data, y_fit, label=f"{path} fit")
-        red_chi = calculate_reduced_chi2(
-            np.array(y_data), np.array(y_fit), np.array(y_err)
-        )
-        print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-
-
-def fit_expo_poly(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e", "greedy_o"]:
-        params = params if params is not None else [1, 0, 0, 0, 0]
-        popt, pcov = curve_fit(
-            f=expo_inv_poly, xdata=x_data, ydata=y_data, p0=params, sigma=y_err
-        )
-        error = np.sqrt(np.diag(pcov))
-        print(
-            f"y = ({popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]})*({popt[2]}+-{error[2]} + {popt[3]}+-{error[3]}/x + {popt[4]}+-{error[4]}/x^2)"
-        )
-        y_fit = [expo_inv_poly(x, *popt) for x in x_data]
-        plt.plot(x_data, y_fit, label=f"{path} fit")
-        red_chi = calculate_reduced_chi2(
-            np.array(y_data), np.array(y_fit), np.array(y_err)
-        )
-        print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-
-
-def fit_linear(x_data, y_data, y_err, path, params=None):
-    if path in ["longest", "greedy_e", "greedy_o"]:
-        params = params if params is not None else [1]
+def fit_linear(x_data, y_data, y_err, path, params=None, ax=None):
+    if path in [
+        "longest",
+        "greedy_e",
+        "greedy_o",
+        "random",
+    ]:
+        params = params if params is not None else [1.7, 0.5]
         popt, pcov = curve_fit(
             f=linear, xdata=x_data, ydata=y_data, p0=params, sigma=y_err
         )
         error = np.sqrt(np.diag(pcov))
-        print(f"y = {popt[0]}+-{error[0]}")
-        y_fit = [linear(x, *popt) for x in x_data]
-        plt.plot(x_data, y_fit, label=f"{path} fit")
-        red_chi = calculate_reduced_chi2(
+        print(f"y = {popt[0]}+-{error[0]} * x + {popt[1]}+-{error[1]}")
+        y_fit = np.array([linear(x, *popt) for x in x_data])
+        red_chi, pval = calculate_reduced_chi2(
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+        legend = f"{label_map[path]} fit: \n$({popt[0]:.3f}\pm{error[0]:.3f})xN + {{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        if not ax:
+            (l,) = plt.plot(x_data, y_fit, label=legend)
+        else:
+            if path == "longest":
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
+            if path == "greedy_e":
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    linestyle="dashed",
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
+        return l, legend, y_fit
 
 
 def read_file(n, r, d, i, extra=None, specific=None):
@@ -188,24 +182,6 @@ def calculate_reduced_chi2(data, fit_data, uncertainties):
     dof = len(data) - len(fit_data.shape)  # degrees of freedom
     pval = 1 - stats.chi2.cdf(chi2, dof)
     return chi2 / dof, pval
-
-
-@dataclass
-class Data:
-    x_data: np.ndarray = None
-    y_data: np.ndarray = None
-    x_error: np.ndarray = None
-    y_error: np.ndarray = None
-
-    def __post_init__(self):
-        for attr_name in vars(self):
-            attr = getattr(self, attr_name)
-            if isinstance(attr, np.ndarray):
-                pass
-            elif isinstance(attr, list):
-                setattr(self, attr_name, np.ndarray(attr))
-            else:
-                raise TypeError(f"invalid data type: {type(attr)} for {attr}")
 
 
 def fit_4d(x, par):

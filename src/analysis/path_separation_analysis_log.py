@@ -7,7 +7,7 @@ from matplotlib import gridspec
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
-from src.analysis.an_utils import PATH_NAMES, read_file, fit_expo, calculate_reduced_chi2, linear
+from src.analysis.an_utils import PATH_NAMES, read_file, fit_expo, calculate_reduced_chi2, linear, fit_linear
 from src.utils import nrange, colour_map, label_map
 
 
@@ -17,6 +17,7 @@ params = {
     "longest": [0.04, -0.32],
     "greedy_e": [0.07, -0.48]
 }
+
 
 def separation_from_geodesic_by_path(graphs, d):
     fit_legends = []
@@ -45,10 +46,10 @@ def separation_from_geodesic_by_path(graphs, d):
         n_seps = defaultdict(list)
         for graph in graphs:
             n_seps[graph["n"]].append(
-                np.mean([sum(pos[j]**2 for j in range(1, len(pos))) for pos in graph["paths"][path]])
+                np.log(np.mean([sum(pos[j]**2 for j in range(1, len(pos))) for pos in graph["paths"][path]]))
             )
 
-        x_data = list(n_seps.keys())
+        x_data = list(np.log(list(n_seps.keys())))
         y_data = [np.mean(v) for v in n_seps.values()]
         y_err = [np.std(v) / np.sqrt(len(v)) for v in n_seps.values()]
 
@@ -87,7 +88,7 @@ def separation_from_geodesic_by_path(graphs, d):
 
         if path in ["longest", "greedy_e", "greedy_o"]:
             i += 1
-            l, legend, y_fit = fit_expo(
+            l, legend, y_fit = fit_linear(
                 x_data, y_data, y_err, path, params=params[path], ax=ax
             )
             plot_lines.append(l)
@@ -98,11 +99,9 @@ def separation_from_geodesic_by_path(graphs, d):
     ax_res.legend(loc="upper left", bbox_to_anchor=(1.02, 0.9))
     ax.legend(loc="upper left", bbox_to_anchor=(1.02, 0.875))
 
-    ax.set_xlabel("$N$", fontsize=16)
-    ax.set_ylabel(r"$\langle \sigma^2 \rangle$", fontsize=16)
-    ax_res.set_ylim(-0.0017, 0.0017)
-    ax.set_yscale("log")
-    # ax.set_xscale("log")
+    ax.set_xlabel("log($N$)", fontsize=16)
+    ax.set_ylabel(r"log($\langle \sigma^2 \rangle$)", fontsize=16)
+    # ax_res.set_ylim(-0.0017, 0.0017)
 
     ax_res.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
     ax.xaxis.set_minor_locator(MultipleLocator(1000))
@@ -115,7 +114,7 @@ def separation_from_geodesic_by_path(graphs, d):
     plt.subplots_adjust(hspace=0.01)  # remove distance between subplots
     # ax.set_xbound(lower=2000, upper=4000)
     plt.savefig(
-        f"images/Mean Separation from Geodesic per Path {d}D.png",
+        f"images/Mean Separation from Geodesic per Path {d}D log.png",
         bbox_inches="tight",
         dpi=1000,
         # facecolor="#F2F2F2",

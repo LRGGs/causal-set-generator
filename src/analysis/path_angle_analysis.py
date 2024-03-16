@@ -9,7 +9,7 @@ from scipy.optimize import curve_fit
 from src.analysis.an_utils import (
     PATH_NAMES,
     read_file,
-    linear, label_map, calculate_reduced_chi2
+    flat, label_map, calculate_reduced_chi2
 )
 from src.utils import nrange
 
@@ -62,7 +62,7 @@ def mean_angular_deviations_per_path_per_n(graphs, d):
             )
             if path_name in ["longest", "greedy_e"]:
                 popt, pcov = curve_fit(
-                    f=linear, xdata=x_data, ydata=y_data, p0=[1], sigma=y_err
+                    f=flat, xdata=x_data, ydata=y_data, p0=[1], sigma=y_err
                 )
                 fit = 10
                 y_fit = np.array([popt]*len(x_data))

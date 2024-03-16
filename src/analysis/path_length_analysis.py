@@ -11,7 +11,7 @@ from src.analysis.an_utils import (
     PATH_NAMES,
     read_file,
     calculate_reduced_chi2,
-    fit_expo, fit_expo_corr, linear,
+    fit_expo, fit_expo_corr, flat,
 )
 from src.utils import nrange
 
