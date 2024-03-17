@@ -13,7 +13,7 @@ from scipy import stats
 
 from utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", "greedy_m",
+PATH_NAMES = ["longest", "greedy_e", #"greedy_m",
               "random", "shortest"]
 
 
@@ -64,7 +64,7 @@ def fit_expo(x_data, y_data, y_err, path, params=None, ax=None):
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-        legend = f"{label_map[path]} fit: \n$({popt[0]:.3f}\pm{error[0]:.3f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        legend = f"{label_map[path]} fit: \n$({popt[0]:.3f}\pm{error[0]:.3f})xN^{{({popt[1]:.3f}\pm{error[1]:.3f})}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
         if not ax:
             (l,) = plt.plot(x_data, y_fit, label=legend)
         else:
@@ -221,7 +221,7 @@ def fit_expo_corr(x_data, y_data, y_err, path, params=(2, 0, -1/3), ax=None, p=F
         print(m_fit_1)
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
 
-        legend = f"{label_map[path]} fit: \n${popt[0]:.2f}xN^{{{0.25 if d == 4 else 0.5}}}x(1{'+' if popt[1] > 0 else ''}{popt[1]:.1E} x N^{{{popt[2]:.2f}}})$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        legend = f"{label_map[path]} fit: \n$m_dxN^{{{0.25 if d == 4 else 0.5}}}x(1 + c_1 N^\\alpha)$\n $m_d = {popt[0]:.3f} \pm {error[0]:.3f} $\n$c_1 = {popt[1]:.1e} \pm {error[1]:.1e}$\n$\\alpha = {popt[2]:.3f} \pm {error[2]:.3f}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
         if not ax:
             (l,) = plt.plot(x_data, y_fit, label=legend)
         else:
@@ -244,6 +244,47 @@ def fit_expo_corr(x_data, y_data, y_err, path, params=(2, 0, -1/3), ax=None, p=F
                 )
     return l, legend, y_fit, red_chi, m_fit_1.values
 
+
+def fit_expo1(x_data, y_data, y_err, path, params=None, ax=None):
+    if path in [
+        "longest",
+        "greedy_e",
+        "greedy_o",
+        "random",
+    ]:
+        params = params if params is not None else [1.7, 0.5]
+        popt, pcov = curve_fit(
+            f=expo, xdata=x_data, ydata=y_data, p0=params, sigma=y_err
+        )
+        error = np.sqrt(np.diag(pcov))
+        print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
+        y_fit = np.array([expo(x, *popt) for x in x_data])
+        red_chi, pval = calculate_reduced_chi2(
+            np.array(y_data), np.array(y_fit), np.array(y_err)
+        )
+        print(f"reduced chi^2 value of: {red_chi} for path: {path}")
+        legend = f"{label_map[path]} fit: \n$({popt[0]:.3f}\pm{error[0]:.3f})xN^{{({popt[1]:.3f}\pm{error[1]:.3f})}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        if not ax:
+            (l,) = plt.plot(x_data, y_fit, label=legend)
+        else:
+            if path == "longest":
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
+            if path == "greedy_e":
+                (l,) = ax.plot(
+                    x_data,
+                    y_fit,
+                    linestyle="dashed",
+                    label=legend,
+                    zorder=4,
+                    color="black",
+                )
+        return l, legend, y_fit
 
 if __name__ == "__main__":
     graphs = read_file(1, 1, 1, 1, specific="N-(500-6000)x100__R-0-1__D-2__I-100_paths.json")

@@ -60,14 +60,7 @@ def mean_angular_deviations_per_path_per_n(graphs, d):
                 marker=".",
                 label=label_map[path_name],
             )
-            if path_name in ["longest", "greedy_e"]:
-                popt, pcov = curve_fit(
-                    f=flat, xdata=x_data, ydata=y_data, p0=[1], sigma=y_err
-                )
-                fit = 10
-                y_fit = np.array([popt]*len(x_data))
-                red_chi, pval = calculate_reduced_chi2(y_data[-fit:], y_fit[-fit:], y_err[-fit:])
-                plt.plot(x_data, y_fit, label=f"{label_map[path_name]} fit: ${popt[0]:.2f}$\n $\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}")
+    plt.plot(x_data, y_fit, label=f"{label_map[path_name]} fit: ${popt[0]:.2f}$\n $\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}")
 
     plt.legend(loc="upper left", bbox_to_anchor=(1.02, 0.875))
     plt.xlabel("Number of Nodes")

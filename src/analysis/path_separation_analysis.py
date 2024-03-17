@@ -22,14 +22,14 @@ def separation_from_geodesic_by_path(graphs, d):
     fit_legends = []
     plot_lines = []
 
-    fig = plt.figure(facecolor="#F2F2F2", figsize=(4, 4.25))
+    fig = plt.figure(facecolor="#F2F2F2", figsize=(5.5, 6))
     gs = gridspec.GridSpec(2, 1, height_ratios=[1, 4])
     ax = fig.add_subplot(gs[1])
     ax_res = fig.add_subplot(gs[0])
     ax.grid(which="major")
     ax.grid(which="minor")
     ax.tick_params(
-        axis="both", labelsize=10, direction="in", top=True, right=True, which="both"
+        axis="both", labelsize=12, direction="in", top=True, right=True, which="both"
     )
 
     ax_res.grid(which="major")
@@ -37,6 +37,7 @@ def separation_from_geodesic_by_path(graphs, d):
     ax_res.tick_params(
         axis="both", labelsize=7, direction="in", top=True, right=True, which="both"
     )
+
 
     residuals = []
     i = 0
@@ -60,7 +61,7 @@ def separation_from_geodesic_by_path(graphs, d):
         del y_data[specific]
         del y_err[specific]
 
-        if path == "greedy_m":
+        if path == "greedy_e":
             ax.errorbar(
                 x_data,
                 y_data,
@@ -68,7 +69,7 @@ def separation_from_geodesic_by_path(graphs, d):
                 ls="none",
                 capsize=5,
                 marker=".",
-                color=colour_map[path],
+                # color=colour_map[path],
                 label=label_map[path],
                 zorder=2,
             )
@@ -78,8 +79,8 @@ def separation_from_geodesic_by_path(graphs, d):
                 y_data,
                 yerr=y_err,
                 ls="none",
-                capsize=5,
-                marker=".",
+                capsize=2,
+                marker=",",
                 color=colour_map[path] if path not in ["longest", "greedy_e"] else None,
                 label=label_map[path],
                 zorder=3,
@@ -100,16 +101,20 @@ def separation_from_geodesic_by_path(graphs, d):
 
     ax.set_xlabel("$N$", fontsize=16)
     ax.set_ylabel(r"$\langle \sigma^2 \rangle$", fontsize=16)
-    ax_res.set_ylim(-0.0017, 0.0017)
+    # ax_res.set_ylim(-0.0017, 0.0017)
     ax.set_yscale("log")
     # ax.set_xscale("log")
 
     ax_res.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
-    ax.xaxis.set_minor_locator(MultipleLocator(1000))
-    ax_res.xaxis.set_minor_locator(MultipleLocator(1000))
+    # ax.xaxis.set_minor_locator(MultipleLocator(5000))
+    # ax_res.xaxis.set_minor_locator(MultipleLocator(10000))
     ax_res.set_ylabel("Residuals", fontsize=12, rotation=0, labelpad=30)
     # ax_res.yaxis.set_label_position("right")
     # ax_res.yaxis.tick_right()
+    ax.set_xlim(0, 15150)
+    ax_res.set_xlim(0, 15150)
+
+    # ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 
     plt.setp(ax_res.get_xticklabels(), visible=False)
     plt.subplots_adjust(hspace=0.01)  # remove distance between subplots
@@ -125,6 +130,6 @@ def separation_from_geodesic_by_path(graphs, d):
 
 
 if __name__ == "__main__":
-    d = 2
-    graphs = read_file(nrange(100, 10000, 100), 0.1, d, 100, extra="paths")
+    d = 4
+    graphs = read_file(nrange(100, 15000, 150), 1, d, 320, extra="paths")
     separation_from_geodesic_by_path(graphs, d)

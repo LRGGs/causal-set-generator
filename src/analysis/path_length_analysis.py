@@ -11,14 +11,14 @@ from src.analysis.an_utils import (
     PATH_NAMES,
     read_file,
     calculate_reduced_chi2,
-    fit_expo, fit_expo_corr, flat,
+    fit_expo1, fit_expo_corr, flat,
 )
 from src.utils import nrange
 
 # matplotlib.use("TkAgg")
 
 parameters = {
-    "longest": [2.11, 2.4e-4, -0.48],
+    "longest": [2.11, .25],
     "greedy_e": [2, 0.25],
     "random": [2.8, 0.05],
 }
@@ -34,6 +34,9 @@ def length_of_paths_with_n(graphs, d):
         y_data = [np.mean(v) for v in n_lengths.values()]
         y_err = [np.std(v) / np.sqrt(len(v)) for v in n_lengths.values()]
 
+        cut = 20
+        x_data, y_data, y_err = x_data[cut:], y_data[cut:], y_err[cut:]
+
         if path == "shortest":
             plt.plot(x_data, [3]*len(x_data), label="Shortest fit: 3.0")
             plt.plot(
@@ -43,7 +46,7 @@ def length_of_paths_with_n(graphs, d):
                 marker=".",
                 label=path,
             )
-        elif path in ["longest"]:
+        elif path in ["longestd"]:
             plt.errorbar(
                 x_data,
                 y_data,
@@ -64,7 +67,7 @@ def length_of_paths_with_n(graphs, d):
                 marker=".",
                 label=path,
             )
-            fit_expo(x_data, y_data, y_err, path, params=parameters[path])
+            fit_expo1(x_data, y_data, y_err, path, params=parameters[path])
 
     plt.grid(which="major")
     plt.grid(which="minor")
