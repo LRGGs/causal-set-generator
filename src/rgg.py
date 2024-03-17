@@ -523,13 +523,13 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
     if m:
         plt.scatter(graph.node_x_positions, graph.node_t_positions, 1, color="green")
         graph.plot_nodes()
-        for i in PATH_NAMES:
+        for i in ["random"]:
             path = graph.path_positions(i)
             if i not in ["longest", "greedy_e"]:
-                plt.plot(path[:, 1], path[:, 0], "-o", label=label_map[i], color=colour_map[i])
+                plt.plot(path[:, 1], path[:, 0], "-o", label="Path coords: $x^j_p$", color=colour_map[i])
             else:
                 plt.plot(path[:, 1], path[:, 0], "-o", label=label_map[i])
-        plt.plot([0, 0], [0, 1], color="black")
+        plt.plot([0, 0], [0, 1], color="black", label="True Geodesic")
         plt.xticks([-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
         ax = plt.gca()
         ax.set_aspect("equal", adjustable="box")
@@ -593,14 +593,14 @@ def main():
     # path = os.getcwd().split("src")[0]
     # file_clean_up(path + "/results/temp/", path + "/results/N-(2000-4000)x10__R-0-1__D-2__I-500_seps.json")
 
-    for i in range(25):
-        multi_run(nrange(100, 8000, 100), 1, 2, 10)
+    # for i in range(25):
+    #     multi_run(nrange(100, 8000, 100), 1, 2, 10)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
     # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
 
-    # run(15000, 1, 4, j=False, t=True)
+    run(100, 1, 2, j=False, t=True, m=True, seed=1)
 
     print(time.time() - start)
 
