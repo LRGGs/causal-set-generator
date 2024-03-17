@@ -302,7 +302,7 @@ class Network:
         # mask = np.array([i for i in range(self.n) if i in self.connected_interval])
         # plt.plot(self.poses[:, 1][mask], self.poses[:, 0][mask], "g,")
 
-        plt.plot(self.poses[:, 1], self.poses[:, 0], "g.")
+        plt.plot(self.poses[:, 1], self.poses[:, 0], "g.", markersize=4)
 
         if show_paths:
             s_mask = np.array([i & 0b00010 for i in self.paths])
@@ -324,7 +324,7 @@ class Network:
             xs = geodesic(ts)
             plt.grid(which="major")
             plt.grid(which="minor")
-            plt.plot(xs, ts, color="k", label="True Geodesic")
+            plt.plot(xs, ts, color="k", linewidth=3.0, zorder=100, label="True Geodesic")
 
     def graph(self):
         swapped_poses = self.poses
