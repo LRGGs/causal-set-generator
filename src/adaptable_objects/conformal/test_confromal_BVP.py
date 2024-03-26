@@ -62,15 +62,51 @@ solution = solve_bvp(geodesic_equations_bvp, boundary_conditions, tau, y_guess)
 # print(solution.y[1]) # finals xs
 
 geodesic = CubicSpline(solution.y[0], solution.y[1])
-#
-# # Check if the solution was successful and evaluate it
-# if solution.success:
-#     tau_eval = tau
-#     t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
-#     #plt.plot(x_eval, t_eval)
-#     #print(max(x_eval))
-#     #plt.show()
-#     #print("Solution found!")
-# else:
-#     pass
-#     #print("Solution not found. Consider adjusting the initial guess or the mesh.")
+# print(geodesic(7.5))
+
+
+if __name__ == '__main__':
+
+    def ds(t, t1):
+        x = geodesic(t)
+        dx = geodesic(t1) - x
+        return np.sqrt(-(x * t)**2 * (-(t1-t)**2 + dx**2))
+
+
+    from scipy.misc import derivative
+
+
+    def fderivative(t):
+        return derivative(geodesic, t, dx=1e-5)
+
+
+    def fintegrand(t):
+        print(fderivative(t))
+        return t*geodesic(t)*np.sqrt(1+fderivative(t)**2)
+
+    def sum_ds(a, b, n=1e4):
+        trange = np.linspace(a, b, int(n))
+        S = sum([ds(trange[i], trange[i+1]) for i, _ in enumerate(trange[:-1])])
+        print(S)
+
+
+    sum_ds(5, 10, 2)
+
+    from scipy.integrate import quad
+
+
+    I = quad(fintegrand, 5, 10)
+    print(f"popopopo{I}")
+
+    #
+    # # Check if the solution was successful and evaluate it
+    # if solution.success:
+    #     tau_eval = tau
+    #     t_eval, x_eval = solution.sol(tau_eval)[:2]  # Extract t and x solutions
+    #     #plt.plot(x_eval, t_eval)
+    #     #print(max(x_eval))
+    #     #plt.show()
+    #     #print("Solution found!")
+    # else:
+    #     pass
+    #     #print("Solution not found. Consider adjusting the initial guess or the mesh.")
