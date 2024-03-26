@@ -161,42 +161,47 @@ ax.set_ylabel('$R$', fontsize=20)
 ax.set_ylim(0.01, 0.09)
 ax.set_xlim(80, 1020)
 
-plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
+plt.savefig('loc.png', transparent=True, dpi=1000)
 plt.show()
 plt.clf()
 
 # Full transition analysis
-#
-# r_range = np.linspace(0.0, 1.0, 100001)
-#
-# all_sample_probs = []
-# for sample in range(3):
-#     probs = []
-#     for n in range(19):
-#         raw_run = np.array(trans_data[0][n])
-#
-#         if n <= 2:
-#             start_index = int(r_range.shape[0] * 15 / 1001)
-#         elif n <= 4:
-#             start_index = int(r_range.shape[0] * 10 / 1001)
-#         elif n <= 8:
-#             start_index = int(r_range.shape[0] * 8 / 1001)
-#         else:
-#             start_index = int(r_range.shape[0] * 1 / 1001)
-#
-#         aligned_probs = np.zeros_like(r_range)
-#         aligned_probs[start_index: start_index + raw_run.shape[0]] = raw_run[:, 0]
-#         aligned_probs[start_index + raw_run.shape[0]:] = np.nan
-#         probs.append(aligned_probs)
-#     all_sample_probs.append(probs)
-#
-# cond_prob = np.array(all_sample_probs)
-# cond_prob_means = np.mean(cond_prob, axis=0)
-# cond_prob_std = np.std(cond_prob, axis=0)
-#
-# plt.errorbar(np.sqrt(1000) * r_range, cond_prob_means[18], yerr=cond_prob_std[18], fmt="r,")
-# plt.errorbar(np.sqrt(100) * r_range, cond_prob_means[0], yerr=cond_prob_std[0], fmt="b,")
-#
-# #plt.savefig('loc.png', facecolor='#F2F2F2', dpi=1000)
-# plt.show()
-# plt.clf()
+
+r_range = np.linspace(0.0, 1.0, 100001)
+
+all_sample_probs = []
+for sample in range(3):
+    probs = []
+    for n in range(19):
+        raw_run = np.array(trans_data[0][n])
+
+        if n <= 2:
+            start_index = int(r_range.shape[0] * 15 / 1001)
+        elif n <= 4:
+            start_index = int(r_range.shape[0] * 10 / 1001)
+        elif n <= 8:
+            start_index = int(r_range.shape[0] * 8 / 1001)
+        else:
+            start_index = int(r_range.shape[0] * 1 / 1001)
+
+        aligned_probs = np.zeros_like(r_range)
+        aligned_probs[start_index: start_index + raw_run.shape[0]] = raw_run[:, 0]
+        aligned_probs[start_index + raw_run.shape[0]:] = np.nan
+        probs.append(aligned_probs)
+    all_sample_probs.append(probs)
+
+cond_prob = np.array(all_sample_probs)
+cond_prob_means = np.mean(cond_prob, axis=0)
+cond_prob_std = np.std(cond_prob, axis=0)
+
+plt.errorbar(np.sqrt(1000) * r_range, cond_prob_means[18],
+             yerr=cond_prob_std[18], fmt="r-", label="$N = 100$")
+plt.errorbar(np.sqrt(100) * r_range, cond_prob_means[0],
+             yerr=cond_prob_std[0], fmt="b-", label="$N = 1000$")
+plt.xlabel("$R_{rescaled}$")
+plt.ylabel("$\Pi$")
+plt.legend()
+plt.grid()
+plt.savefig('loc2.png', transparent=True, dpi=1000)
+plt.show()
+plt.clf()
