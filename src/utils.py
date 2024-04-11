@@ -123,8 +123,8 @@ label_map = {
     "longest": "Longest",
     "shortest": "Shortest",
     "random": "Random",
-    "greedy_e": "Greedy Euclidean",
-    "greedy_m": "Greedy Minkowski",
+    "greedy_e": "Greedy E",
+    "greedy_m": "Greedy M",
 }
 colour_map = {
     "shortest": "mediumorchid",

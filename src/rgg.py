@@ -500,25 +500,70 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
         g = nx.DiGraph()
         g.add_nodes_from(range(n))
         g.add_edges_from(graph.edges)
+        g.add_edge(8, 19)
+        g.remove_edges_from([[11, 17], [15, 19], [10, 18], [1, 13]])
+        colors = []
+        weights = []
+        longest = graph.paths.longest
+        longest = [(0, 1), (1, 7), (7, 11), (11, 15), (15, 17), (17, 19)]
+        shortest = graph.paths.shortest
+        shortest = [(0, 8), (8, 19)]
+        greedy = graph.paths.greedy_e
+        greedy = [(0, 2), (2, 10), (10, 14), (14, 18), (18,19)]
+
         color_map = []
-        longest = sorted(list(set(itertools.chain(*graph.paths.longest))))
-        shortest = sorted(list(set(itertools.chain(*graph.paths.shortest))))
+        longestn = sorted(list(set(itertools.chain(*longest))))
+        shortestn = sorted(list(set(itertools.chain(*shortest))))
+        greedyn = sorted(list(set(itertools.chain(*greedy))))
         for node in graph.nodes:
-            if node.indx in [0, len(graph.nodes) - 1]:
-                color_map.append("red")
-            elif node.indx in longest:
-                color_map.append("green")
-            elif node.indx in shortest:
-                color_map.append("yellow")
+            # if node.indx in [0, len(graph.nodes) - 1]:
+            #     color_map.append("grey")
+            if node.indx in longestn:
+                color_map.append("g")
+            elif node.indx in greedyn:
+                color_map.append("#1f78b4")
+            elif node.indx in shortestn:
+                color_map.append("r")
             else:
-                color_map.append("cyan")
+                color_map.append("grey")
+
+        for e in g.edges():
+            if e in longest:
+                colors.append("g")
+                weights.append(3)
+            elif e in greedy:
+                colors.append("#1f78b4")
+                weights.append(3)
+            elif e in shortest:
+                colors.append("r")
+                weights.append(3)
+            else:
+                colors.append("black")
+                weights.append(1)
+        fig, ax = plt.subplots()
+
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                     ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(15)
+
+        plt.xlabel("X - Spatial Dimension")
+        plt.ylabel("T - Temporal Dimension")
+
+        poses = [(n.position[1], n.position[0]) for n in graph.nodes]
+        # g.remove_node(5)
         nx.draw(
             g,
-            [(n.position[1], n.position[0]) for n in graph.nodes],
+            poses,
+            ax=ax,
+            edge_color=colors,
             node_color=color_map,
+            width=weights,
             with_labels=True,
         )
-        plt.show()
+        plt.axis("on")
+        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        # plt.show()
+        plt.savefig("../images/embedding.png", transparent=True, dpi=1000, bbox_inches="tight")
 
     if m:
         plt.scatter(graph.node_x_positions, graph.node_t_positions, 1, color="green")
@@ -526,17 +571,20 @@ def run(n, r, d, seed=None, i=1, p=False, g=False, m=False, j=True, t=False):
         for i in ["random"]:
             path = graph.path_positions(i)
             if i not in ["longest", "greedy_e"]:
-                plt.plot(path[:, 1], path[:, 0], "-o", label="Path coords: $x^j_p$", color=colour_map[i])
-            else:
-                plt.plot(path[:, 1], path[:, 0], "-o", label=label_map[i])
-        plt.plot([0, 0], [0, 1], color="black", label="True Geodesic")
+                plt.plot(path[:, 1], path[:, 0], "-o", label=label_map[i], color=colour_map[i])
+            elif i == "longest":
+                plt.plot(path[:, 1], path[:, 0], "-o", label=label_map[i], zorder=100)
+            elif i == "greedy_e":
+                plt.plot(path[:, 1], path[:, 0], "-o", label=label_map[i], zorder=99)
+        plt.plot([0, 0], [0, 1], "--", color="black", zorder=101)
         plt.xticks([-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
         ax = plt.gca()
         ax.set_aspect("equal", adjustable="box")
-        plt.legend(loc='lower left', bbox_to_anchor=(1.1, 0.05))
-        plt.title(f"A Fully Connected and Pathed Graph of {graph.n} Nodes")
+        plt.legend(loc='lower left', bbox_to_anchor=(0.65, 0.01))
+        # plt.title(f"A Fully Connected and Pathed Graph of {graph.n} Nodes")
         plt.xlabel("X - Spatial Dimension")
         plt.ylabel("T - Temporal Dimension")
+        # plt.show()
         plt.savefig("../images/grap paths.png", transparent=True, dpi=1000, bbox_inches="tight")
 
     if j:
@@ -595,12 +643,9 @@ def main():
 
     # for i in range(25):
     #     multi_run(nrange(100, 8000, 100), 1, 2, 10)
-    # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
-    # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
-    # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
-    # multi_run(nrange(100, 15000, 50), 0.1, 4, 100)
 
-    run(100, 1, 2, j=False, t=True, m=True, seed=1)
+    run(5000, 0.3, 2, j=False, g=False, m=True, seed=0)
+
 
     print(time.time() - start)
 
