@@ -41,6 +41,10 @@ def separation_from_geodesic_by_path(graphs, d):
 
     residuals = []
     i = 0
+    to_hist = {
+        "longest": {"100": [], "8000": []},
+        "greedy_e": {"100": [], "8000": []}
+    }
 
     for path in PATH_NAMES:
         n_seps = defaultdict(list)
@@ -48,6 +52,10 @@ def separation_from_geodesic_by_path(graphs, d):
             n_seps[graph["n"]].append(
                 np.mean([sum(pos[j]**2 for j in range(1, len(pos))) for pos in graph["paths"][path]])
             )
+
+        if path in to_hist.keys():
+            to_hist[path]["100"] = n_seps[100]
+            to_hist[path]["8000"] = n_seps[8000]
 
         x_data = list(n_seps.keys())
         y_data = [np.mean(v) for v in n_seps.values()]
@@ -67,8 +75,8 @@ def separation_from_geodesic_by_path(graphs, d):
                 y_data,
                 yerr=y_err,
                 ls="none",
-                capsize=5,
-                marker=".",
+                capsize=2,
+                marker=",",
                 # color=colour_map[path],
                 label=label_map[path],
                 zorder=2,
@@ -99,8 +107,8 @@ def separation_from_geodesic_by_path(graphs, d):
     ax_res.legend(loc="upper left", bbox_to_anchor=(1.02, 0.9))
     ax.legend(loc="upper left", bbox_to_anchor=(1.02, 0.875))
 
-    ax.set_xlabel("$N$", fontsize=16)
-    ax.set_ylabel(r"$\langle \sigma^2 \rangle$", fontsize=16)
+    ax.set_xlabel("$N$", fontsize=14)
+    ax.set_ylabel(r"$\langle \sigma^2 \rangle$", fontsize=14)
     # ax_res.set_ylim(-0.0017, 0.0017)
     ax.set_yscale("log")
     # ax.set_xscale("log")
@@ -111,8 +119,8 @@ def separation_from_geodesic_by_path(graphs, d):
     ax_res.set_ylabel("Residuals", fontsize=12, rotation=0, labelpad=30)
     # ax_res.yaxis.set_label_position("right")
     # ax_res.yaxis.tick_right()
-    ax.set_xlim(0, 15150)
-    ax_res.set_xlim(0, 15150)
+    # ax.set_xlim(0, 15150)
+    # ax_res.set_xlim(0, 15150)
 
     # ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 
@@ -129,7 +137,56 @@ def separation_from_geodesic_by_path(graphs, d):
     plt.clf()
 
 
+    fig = plt.figure(facecolor="#F2F2F2", figsize=(6, 4.5))
+    gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1])
+    ax = fig.add_subplot(gs[1])
+    ax_top = fig.add_subplot(gs[0])
+    # ax.grid(which="major")
+    # ax.grid(which="minor")
+    ax.tick_params(
+        axis="both", labelsize=12, direction="in", top=True, right=True, which="both"
+    )
+
+    # ax_top.grid(which="major")
+    # ax_top.grid(which="minor")
+    ax_top.tick_params(
+        axis="both", labelsize=12, direction="in", top=True, right=True, which="both"
+    )
+
+    ax_top.hist(to_hist["longest"]["100"], bins=15, label="N=100")
+    ax_top.hist(to_hist["longest"]["8000"], bins=15, label="N=8000")
+    ax_top.set_xlim(-0.003, 0.06)
+    ax_top.set_ylim(0, 125)
+    ax_top.set_xlabel("$\langle \sigma^2\\rangle$", fontsize=13)
+    ax_top.set_ylabel("LRGGs", fontsize=13)
+    ax_top.set_title("Longest Path", fontsize=13)
+
+    # ax_top.set_yscale("log")
+
+    ax.hist(to_hist["greedy_e"]["100"], bins=15, label="N=100")
+    ax.hist(to_hist["greedy_e"]["8000"], bins=15, label="N=8000")
+    ax.set_xlim(-0.002, 0.04)
+    ax.set_ylim(0, 125)
+    ax.set_xlabel("$\langle \sigma^2\\rangle$", fontsize=13)
+    ax.set_ylabel("LRGGs", fontsize=13)
+    ax.set_title("Greedy Euclidean Path", fontsize=13)
+    # ax.set_yscale("log")
+
+    ax.legend()
+    ax_top.legend()
+    plt.tight_layout()
+
+    plt.savefig(
+        f"images/distribution of mss.png",
+        bbox_inches="tight",
+        dpi=1000,
+        # facecolor="#F2F2F2",
+        transparent=True,
+    )
+
+
+
 if __name__ == "__main__":
-    d = 4
-    graphs = read_file(nrange(100, 15000, 150), 1, d, 320, extra="paths")
+    d = 2
+    graphs = read_file(nrange(100, 8000, 100), 1, d, 250, extra="paths")
     separation_from_geodesic_by_path(graphs, d)

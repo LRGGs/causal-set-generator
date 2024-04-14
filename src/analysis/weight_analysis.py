@@ -43,17 +43,33 @@ def full_weights_analysis(graphs):
 
     min_y, max_y = float(min(ns)), float(max(ns))
     min_x, max_x = 0.0, float(max_weight)
-    plt.figure(figsize=(5.5, 9))
+    plt.figure(figsize=(5, 9))
     plt.imshow(
-        np.flip(mean_vals, axis=0), extent=(min_x, max_x, min_y, max_y), aspect=0.01
+        np.flip(np.flip(mean_vals, axis=0), axis=1), extent=(max_x, min_x, min_y, max_y), aspect=0.01
     )
     # plt.tight_layout()
-    plt.xlabel("Weight")
-    plt.ylabel("Number of Nodes")
-    colorbar = plt.colorbar()
-    colorbar.set_label("Mean Separation From Geodesic")
-    plt.title("Mean Separation of Nodes from the Geodesic\n by N and Weight")
+    plt.xlabel("Weight", rotation=180, fontsize=13)
+    plt.ylabel("Number of Nodes", fontsize=13)
+    colorbar = plt.colorbar(location="top", fraction=0.021)
+    plt.xticks(rotation=90)
+    ax = plt.gca()
+    ax.yaxis.tick_right()
+    plt.yticks(rotation=90, va="center")
+    ax.yaxis.set_label_position("right")
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    colorbar.ax.tick_params(rotation=90, labelsize=12)
+    colorbar.ax.invert_xaxis()
+    colorbar.set_label("$\langle \sigma^2\\rangle$", rotation=90, fontsize=13)
+    # plt.title("Mean Separation of Nodes from the Geodesic\n by N and Weight")
+    plt.tight_layout()
     plt.show()
+    # plt.savefig(
+    #     f"images/heatmap.png",
+    #     bbox_inches="tight",
+    #     dpi=1000,
+    #     # facecolor="#F2F2F2",
+    #     transparent=True,
+    # )
 
     As = []
     Bs = []
@@ -130,15 +146,15 @@ def full_weights_analysis(graphs):
                 mean_sep_err[0]
                 for mean_sep_err in n_collapsed_valid_weight_mean_sep_errs[n].values()
             ]
-            plt.plot(valid_weights, mean_seps, ls="none", marker=".", label=n)
+            plt.plot(valid_weights, mean_seps, ls="none", marker=".", label=f"N = {n}")
     plt.legend()
     plt.xlabel("Weight")
     plt.ylabel("Mean Separation")
     plt.grid(which="major")
     plt.grid(which="minor")
-    plt.title(
-        f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
-    )
+    # plt.title(
+    #     f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
+    # )
     # plt.show()
 
     collapsed_mean_seps = [
@@ -166,15 +182,21 @@ def full_weights_analysis(graphs):
         np.array(collapsed_mean_sep_errs),
     )
     print(f"reduced chi^2 value of: {red_chi} for collapsed weight separations")
-    plt.plot(valid_weights, y_fit, label="fit")
+    plt.plot(valid_weights, y_fit, label="Polynomial Fit")
     plt.legend()
-    plt.xlabel("weight")
-    plt.ylabel(f"mean separation")
-    plt.title(
-        f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
+    plt.xlabel("Weight", fontsize=14)
+    plt.ylabel("$\langle \sigma^2 \\rangle \div (2.558 \\times N^{-0.247})$", fontsize=14)
+    ax = plt.gca()
+    ax.tick_params(
+        axis="both", labelsize=12, direction="in", top=True, right=True, which="both"
     )
+    # plt.title(
+    #     f"Mean Separation from Geodesic Normalised by {As[-1]:.3f} * N ^ {Bs[-1]:.3f}"
+    # )
+    # plt.show()
     plt.savefig(
         f"images/Collapsed weights.png",
+        dpi=1000,
         transparent=True,
     )
     plt.clf

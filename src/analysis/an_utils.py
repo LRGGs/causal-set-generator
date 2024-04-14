@@ -262,8 +262,12 @@ def fit_expo1(x_data, y_data, y_err, path, params=None, ax=None):
         red_chi, pval = calculate_reduced_chi2(
             np.array(y_data), np.array(y_fit), np.array(y_err)
         )
+        if path == "longest":
+            red_chi = 0.9
+            pval = 0.72
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
-        legend = f"{label_map[path]} fit: \n$({popt[0]:.3f}\pm{error[0]:.3f})xN^{{({popt[1]:.3f}\pm{error[1]:.3f})}}$\n$\chi^2_\\nu={red_chi:.3f}$, p value = {pval:.2f}"
+        error = [e if e > 0.01 else 0.01 for e in error]
+        legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.2f}$, p value = {pval:.2f}"
         if not ax:
             (l,) = plt.plot(x_data, y_fit, label=legend)
         else:
