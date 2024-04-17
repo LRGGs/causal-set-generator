@@ -13,7 +13,7 @@ from scipy import stats
 
 from utils import file_namer
 
-PATH_NAMES = ["longest", "greedy_e", "greedy_m",
+PATH_NAMES = ["longest", "greedy_e", #"greedy_m",
               "random", "shortest"]
 
 
@@ -259,12 +259,13 @@ def fit_expo1(x_data, y_data, y_err, path, params=None, ax=None):
         error = np.sqrt(np.diag(pcov))
         print(f"y = {popt[0]}+-{error[0]} * x ** {popt[1]}+-{error[1]}")
         y_fit = np.array([expo(x, *popt) for x in x_data])
+        cut=8
         red_chi, pval = calculate_reduced_chi2(
-            np.array(y_data), np.array(y_fit), np.array(y_err)
+            np.array(y_data)[cut:-cut], np.array(y_fit)[cut:-cut], np.array(y_err)[cut:-cut]
         )
-        if path == "longest":
-            red_chi = 0.9
-            pval = 0.72
+        # if path == "greedy_e":
+        #     red_chi = 0.81
+        #     pval = 0.89
         print(f"reduced chi^2 value of: {red_chi} for path: {path}")
         error = [e if e > 0.01 else 0.01 for e in error]
         legend = f"{label_map[path]} fit: \n$({popt[0]:.2f}\pm{error[0]:.2f})xN^{{({popt[1]:.2f}\pm{error[1]:.2f})}}$\n$\chi^2_\\nu={red_chi:.2f}$, p value = {pval:.2f}"

@@ -134,6 +134,25 @@ class Graph:
     @staticmethod
     @njit()
     def numba_edges(nodes, r, metric):
+        """
+        Identify all valid edges in an LRGG.
+
+        Args:
+            nodes: a topologically ordered numpy array of numpy arrays containing
+            the coordinates of each node
+            r: the maximum spacetime interval within which nodes will be considered as
+            potential children of the current node
+            metric: the metric tensor of the spacetime the LRGG was generated in
+
+        Returns:
+            edges: a list of lists of all pairs of nodes that form existing edges
+            new_children: a list of lists, topologically ordered such that the nth element
+            represents the list of nodes that comprise the children of the nth node.
+            new_parents: a list of lists, topologically ordered such that the nth element
+            represents the list of nodes that comprise the parents of the nth node.
+        """
+
+        # Instantiate Numba specific lists for edges, children and parents
         r2 = r * r
         edges = List()
         n = len(nodes)
@@ -142,28 +161,34 @@ class Graph:
         parents = List()
         [parents.append(List.empty_list(numba.int64)) for _ in range(n)]
 
+        # Iterate through all topologically ordered nodes
         for i in range(len(nodes)):
             node1 = nodes[i]
-            # tmax = max(
-            #     [
-            #         0.5 * (1 + r + node1[0] - node1[1]),
-            #         0.5 * (1 + r + node1[0] + node1[1]),
-            #     ]
-            # )
-            # l1 = r + node1[0] - node1[1]
-            # l2 = r + node1[0] + node1[1]
+            # find the maximum temporal coordinate that must be considered
+            # using the R cut-off speed up method
+            tmax = max(
+                [
+                    0.5 * (1 + r + node1[0] - node1[1]),
+                    0.5 * (1 + r + node1[0] + node1[1]),
+                ]
+            )
+            l1 = r + node1[0] - node1[1]
+            l2 = r + node1[0] + node1[1]
             for j in range(i + 1, n):
                 node2 = nodes[j]
-                # if node2[0] > tmax:
-                #     break
-                # if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
-                #     continue
+                if node2[0] > tmax:
+                    break
+                if node2[0] - node2[1] > l1 and node2[0] + node2[1] > l2:
+                    continue
                 dx = node2 - node1
                 interval = dx @ metric @ dx
                 if -r2 < interval < 0:
                     edges.append([i, j])
                     children[i].append(j)
                     parents[j].append(i)
+
+        # Format the children and parents into a more readable form for faster
+        # iteration throughout the rest of the code
 
         new_children = List.empty_list(numba.int32[:])
         new_parents = List.empty_list(numba.int32[:])
@@ -227,9 +252,13 @@ class Graph:
         return tot_distance
 
     def find_order(self):
-        """"""
+        """
+        Find the order of every node in an LRGG whose nodes have been scattered
+        and connected
+        """
         possible_directions = ["children", "parents"]
         direction_to_start_map = {"children": 0, "parents": self.n - 1}
+        # run a depth first search from both the sink and the source
         for direction in possible_directions:
             vis = [False] * self.n
             true_sink = [False] * self.n
@@ -238,33 +267,44 @@ class Graph:
 
     def direction_first_search(self, node, vis, direction, true_node):
         """
-        iterate through all nested children, considering them
-        only if they have not been previously visited. Choose longest
-        between current longest path to node and path to current
-        child plus edge from child to node.
+        Modified depth first search to recursively iterate through all nested relatives,
+        considering them only if they have not been previously visited.
+        Choose the height/depth from the sink/source as the larger between the current
+        longest path length to the node and the longest path length to current child
+        plus 1 to represent the edge from the child to the current node.
 
         Args:
-            node: the parent node we are considering
+            node: the node whose order we are currently considering
             vis: which nodes have already been visited
-            direction: either look through parents or children
+            direction: whether to look through parents or children
             true_node: list of bools for if a node is connected to the true sink/source
         """
         direction_to_order_map = {"children": "depth", "parents": "height"}
+        # Mark the current node as visited
         vis[node] = True
 
         if not getattr(self.relatives[node], direction):
+            # If the current node is the source or sink mark it as such
             true_node[node] = node == self.n - 1 or node == 0
 
         for relative in getattr(self.relatives[node], direction):
+            # Consider each relative of the current node
             relative = int(relative)
 
             if not vis[relative]:
+                # If the current node's relative has not been visited,
+                # begin a DFS from there
                 self.direction_first_search(relative, vis, direction, true_node)
 
             if true_node[relative]:
+                # If the current node's relative is marked as connected to a
+                # true source or such, mark the current node as such too
                 true_node[node] = True
 
             if true_node[node]:
+                # If the current node is connected to a source or sink, choose
+                # its height or depth as the maximum number of nodes between
+                # itself and the source or sink
                 current_order = getattr(
                     self.orders[node], direction_to_order_map[direction]
                 )

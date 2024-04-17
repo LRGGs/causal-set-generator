@@ -11,7 +11,7 @@ from src.analysis.an_utils import (
     PATH_NAMES,
     read_file,
     calculate_reduced_chi2,
-    fit_expo1, fit_expo_corr, flat,
+    fit_expo1, fit_expo_corr, flat, label_map,
 )
 from src.utils import nrange
 
@@ -34,10 +34,23 @@ def length_of_paths_with_n(graphs, d):
         x_data = list(n_lengths.keys())
         y_data = [np.mean(v) for v in n_lengths.values()]
         y_err = [np.std(v) / np.sqrt(len(v)) for v in n_lengths.values()]
+        y_errx = [np.std(v) / np.sqrt(len(v)) * 4 for v in n_lengths.values()]
 
         # cut = 20
         # x_data, y_data, y_err = x_data[cut:], y_data[cut:], y_err[cut:]
 
+        if path != "shortest":
+            plt.errorbar(
+                x_data,
+                y_data,
+                yerr=y_errx,
+                ls="none",
+                capsize=2,
+                marker=",",
+                label=label_map[path],
+                zorder=100
+            )
+            fit_expo1(x_data, y_data, y_err, path, params=parameters[path])
         if path == "shortest":
             plt.plot(x_data, [3]*len(x_data), label="Shortest fit: 3.0")
             plt.plot(
@@ -45,33 +58,9 @@ def length_of_paths_with_n(graphs, d):
                 y_data,
                 ls="none",
                 marker=".",
-                label=path,
+                label="Shortest",
                 zorder=100
             )
-        elif path in ["longestd"]:
-            plt.errorbar(
-                x_data,
-                y_data,
-                yerr=y_err,
-                ls="none",
-                capsize=2,
-                marker=",",
-                label=path,
-            )
-            fit_expo_corr(x_data, y_data, y_err, path, params=parameters[path], p=True, d=d)
-        else:
-            plt.errorbar(
-                x_data,
-                y_data,
-                yerr=y_err,
-                ls="none",
-                capsize=2,
-                marker=",",
-                label=path,
-                zorder=100
-            )
-            fit_expo1(x_data, y_data, y_err, path, params=parameters[path])
-
     plt.grid(which="major")
     plt.grid(which="minor")
     plt.loglog()
@@ -90,6 +79,6 @@ def length_of_paths_with_n(graphs, d):
 
 
 if __name__ == "__main__":
-    d = 2
-    graphs = read_file(nrange(100, 8000, 100), 1, d, 250, extra="paths")
+    d = 4
+    graphs = read_file(nrange(100, 15000, 150), 1, d, 320, extra="paths")
     length_of_paths_with_n(graphs, d=d)

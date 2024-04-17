@@ -306,13 +306,13 @@ class Network:
 
         if show_paths:
             s_mask = np.array([i & 0b00010 for i in self.paths])
-            plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co", label="shortest")
+            # plt.plot(self.poses[:, 1][s_mask == 2], self.poses[:, 0][s_mask == 2], "-co", label="Shortest")
 
             r_mask = np.array([i & 0b00100 for i in self.paths])
-            plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro", label="random")
+            plt.plot(self.poses[:, 1][r_mask == 4], self.poses[:, 0][r_mask == 4], "-ro", label="Random")
 
             g_mask = np.array([i & 0b01000 for i in self.paths])
-            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-mo", label="Greedy Minkowski")
+            plt.plot(self.poses[:, 1][g_mask == 8], self.poses[:, 0][g_mask == 8], "-mo", label="Greedy Conformal")
 
             e_mask = np.array([i & 0b10000 for i in self.paths])
             plt.plot(self.poses[:, 1][e_mask == 16], self.poses[:, 0][e_mask == 16], "-yo", label="Greedy Euclidean")
@@ -366,7 +366,7 @@ if __name__ == "__main__":
     # matplotlib.use("TkAgg")
 
 
-    net = Network(6000, 2)
+    net = Network(5000, 2)
 
     start = time.time()
 
@@ -414,11 +414,11 @@ if __name__ == "__main__":
     print(f"random: {net.coord_dist('r')}")
     print("==========================================================")
 
-    plt.figure(figsize=(6, 8))
+    plt.figure(figsize=(6, 6))
     net.plot(show_paths=True, show_geodesic=True)
     plt.legend()
-    plt.xlabel("Spatial Coordinate", fontsize=16)
-    plt.ylabel("Temporal Coordinate", fontsize=16)
+    plt.xlabel("Spatial Coordinate", fontsize=13)
+    plt.ylabel("Temporal Coordinate", fontsize=13)
     plt.savefig(
         "Conformal Curved Spacetime",
         bbox_inches="tight",

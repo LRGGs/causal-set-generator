@@ -185,8 +185,7 @@ def separation_from_geodesic_by_path(graphs, d):
     )
 
 
-
 if __name__ == "__main__":
-    d = 2
-    graphs = read_file(nrange(100, 8000, 100), 1, d, 250, extra="paths")
+    d = 4
+    graphs = read_file(nrange(100, 15000, 150), 1, d, 320, extra="paths")
     separation_from_geodesic_by_path(graphs, d)

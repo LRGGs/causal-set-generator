@@ -86,7 +86,7 @@ def full_weights_analysis(graphs):
         Bs.append(popt[1])
 
         if i == 0 or i == max_weight - 1:
-            fig, axs = plt.subplots(2, height_ratios=[3, 1])
+            fig, axs = plt.subplots(2, height_ratios=[3, 1], figsize=[5.5, 4.5])
             print(f"weight {i}: ({popt[0]}+-{error[0]}) * N ^ ({popt[1]}+-{error[1]})")
             axs[0].errorbar(
                 ns,
@@ -95,14 +95,14 @@ def full_weights_analysis(graphs):
                 ls="none",
                 capsize=5,
                 marker=".",
-                label="data",
+                label="Data",
             )
             y_fit = [expo(n, *popt) for n in ns]
-            axs[0].plot(ns, y_fit, label="fit")
+            axs[0].plot(ns, y_fit, label=f"Fit: {popt[0]:.3f}N^{popt[1]:.3f}")
             axs[0].set(
-                title=f"Mean Separation from Geodesic for Weight {i}",
+                title=f"$\langle \\sigma^2 \\rangle$ from Geodesic for Weight {i}",
                 xlabel="Number of Nodes",
-                ylabel=f"Mean Separation",
+                ylabel="$\langle \\sigma^2 \\rangle$",
             )
             red_chi = calculate_reduced_chi2(
                 np.array(mean_seps), np.array(y_fit), np.array(mean_sep_errs)
@@ -110,7 +110,26 @@ def full_weights_analysis(graphs):
             print(f"reduced chi^2 value of: {red_chi} for weight: {i}")
             axs[1].plot(ns, np.array(mean_seps) - np.array(y_fit))
             axs[1].set(xlabel="Number of Nodes", ylabel=f"Residuals")
-            plt.show()
+            axs[0].grid(which="major")
+            axs[0].grid(which="minor")
+            axs[0].tick_params(
+                axis="both", direction="in", top=True, right=True, which="both"
+            )
+
+            axs[1].grid(which="major")
+            axs[1].grid(which="minor")
+            axs[1].tick_params(
+                axis="both", direction="in", top=True, right=True, which="both"
+            )
+            axs[0].legend()
+            plt.tight_layout()
+            plt.savefig(
+                f"images/{i}.png",
+                bbox_inches="tight",
+                dpi=1000,
+                # facecolor="#F2F2F2",
+                transparent=True,
+            )
 
     plt.plot(Ws, As, label="Factor: a")
     plt.plot(Ws, Bs, label="Exponent: b")
